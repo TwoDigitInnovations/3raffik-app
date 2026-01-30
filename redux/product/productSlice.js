@@ -1,5 +1,5 @@
 import {createSlice} from '@reduxjs/toolkit';
-import {createProduct,getProductbyCompany,updateProduct,deleteProduct } from './productAction';
+import {createProduct,getProductbyCompany,updateProduct,deleteProduct,getProductbyId } from './productAction';
 
 
 const initialState = {
@@ -22,6 +22,19 @@ const productSlice = createSlice({
       state.error = null;
     });
     builder.addCase(getProductbyCompany.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
+
+    //getProductbyId reducer
+    builder.addCase(getProductbyId.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(getProductbyId.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.error = null;
+    });
+    builder.addCase(getProductbyId.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload;
     });

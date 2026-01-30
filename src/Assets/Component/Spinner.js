@@ -2,20 +2,18 @@ import React, { memo} from 'react';
 import {ActivityIndicator, StyleSheet, Text, View} from 'react-native';
 import Constants, { FONTS } from '../Helpers/constant';
 import { wp } from '../../../utils/responsiveScreen';
-// import {useDispatch,useSelector} from 'react-redux'
+import {useSelector} from 'react-redux'
 // import { useTranslation } from 'react-i18next';
 
 const Spinner = () => {
   // const { t } = useTranslation();
-  // const isLoading = useSelector(
-  //   state =>
-  //     state.auth.isLoading 
-  //   ||state.location.isLoading ||
-  //     state.booking.isLoading||
-  //     state.notification.isLoading||
-  //     state.progress.isLoading
-  // );
-  if (!false) {
+  const isLoading = useSelector(
+    state =>
+      state.auth.isLoading 
+    ||state.campaign.isLoading ||
+      state.product.isLoading
+  );
+  if (!isLoading) {
     return <></>;
   }
 

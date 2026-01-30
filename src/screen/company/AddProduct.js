@@ -69,10 +69,11 @@ const product_id = props?.route?.params?.product_id;
   };
   return (
    <View style={styles.container}>
-    <Header item={"Product Create"} showback={true}/>
+    <View style={{marginHorizontal:20}}><Header item={"Product Create"} showback={true}/></View>
     <KeyboardAvoidingView
               behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
     <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={{marginHorizontal:20}}>
     <Text style={styles.inptxt}>Product Name</Text>
         <View style={styles.inpcov}>
           <TextInput
@@ -161,9 +162,9 @@ const product_id = props?.route?.params?.product_id;
         {submitted && !productModel?.price && (
             <Text style={styles.require}>Price required</Text>
           )}
-
+</View>
         <TouchableOpacity style={styles.btncov} onPress={submit}>
-              <Text style={styles.btntxt}>{false?"Update":"Create"} Product</Text>
+              <Text style={styles.btntxt}>{product_id?"Update":"Create"} Product</Text>
             </TouchableOpacity>
             </ScrollView>
             </KeyboardAvoidingView>
@@ -176,7 +177,7 @@ export default AddProduct
 const styles = StyleSheet.create({
     container:{
     flex:1,
-    padding:20,
+    paddingVertical:20,
     backgroundColor:Constants.white
   },
   inpcov:{
@@ -205,7 +206,7 @@ const styles = StyleSheet.create({
     // backgroundColor:'red',
   },
   btncov:{
-    width:'100%',
+    width:'90%',
     backgroundColor:Constants.custom_yellow,
     borderRadius:10,
     height:hp(5.5),

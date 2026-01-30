@@ -1,5 +1,5 @@
 import {createSlice} from '@reduxjs/toolkit';
-import {createCampaign,getCampaignbyCompany,updateCampaign,deleteCampaign } from './campaignAction';
+import {createCampaign,getCampaignbyCompany,updateCampaign,deleteCampaign,getCampaignbyId } from './campaignAction';
 
 
 const initialState = {
@@ -22,6 +22,19 @@ const campaignSlice = createSlice({
       state.error = null;
     });
     builder.addCase(getCampaignbyCompany.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
+
+    //getcampaignbyid reducer
+    builder.addCase(getCampaignbyId.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(getCampaignbyId.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.error = null;
+    });
+    builder.addCase(getCampaignbyId.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload;
     });
