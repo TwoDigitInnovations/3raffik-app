@@ -26,6 +26,31 @@ export const getCampaignbyCompany = createAsyncThunk(
     }
   },
 );
+
+//For get All Campaigns
+export const getAllCampaigns = createAsyncThunk(
+  'campaign/getAllCampaigns',
+  async (params, thunkAPI) => {
+    try {
+      let url =`campaign/getAllCampaigns?page=${params?.p}`
+      if (params?.text) {
+        url +=`&key=${params.text}`
+      } 
+      if (params?.selectedStatus) {
+        url +=`&selectedStatus=${params?.selectedStatus}`
+      } 
+      if (params?.selectedVerification) {
+        url +=`&selectedVerification=${params?.selectedVerification}`
+      } 
+
+      const {data} = await axios.get(url);
+      return data;
+    } catch (error) {
+      showToaster('error',error);
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 export const getCampaignbyId = createAsyncThunk(
   'campaign/getCampaignbyId',
   async (params, thunkAPI) => {

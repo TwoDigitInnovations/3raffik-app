@@ -5,7 +5,7 @@ import Constants, { FONTS } from '../Assets/Helpers/constant';
 import { CircleUserRound, LayoutDashboard, Megaphone, SquareKanban } from 'lucide-react-native';
 import Dashboard from '../screen/app/Dashboard';
 import Campaigns from '../screen/app/Campaigns';
-import Products from '../screen/app/Products';
+import MyProducts from '../screen/app/MyProducts';
 import Account from '../screen/app/Account';
 
 
@@ -30,7 +30,7 @@ export const  TabNav=()=>{
     {
       iconActive: <SquareKanban color={Constants.red} size={20} />,
       iconInActive: <SquareKanban color={Constants.black} size={22} />,
-      component: Products,
+      component: MyProducts,
       routeName: 'Products',
     },
     {

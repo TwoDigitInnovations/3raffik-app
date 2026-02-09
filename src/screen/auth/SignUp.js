@@ -62,53 +62,66 @@ const SignUp = () => {
     outputRange: ['0%', '100%'],
   });
   return (
+    <View style={styles.container}>
+      {/* Background Image */}
+      <Image 
+        source={require('../../Assets/Images/over3.png')} 
+        style={styles.backgroundImage}
+        resizeMode="contain"
+      />
+      
       <KeyboardAvoidingView 
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardContainer}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="always"
+          style={styles.scrollContainer}>
+
+          {/* Tab Toggle */}
+          <View style={styles.btnCov}>
+            {/* Animated sliding background */}
+            <Animated.View
+              style={[styles.slider, { transform: [{ translateX }] }]}
+            />
+
+            <TouchableOpacity
+              style={styles.cencelBtn}
+              onPress={() => settabopt(0)}
+              activeOpacity={0.8}
             >
-      <ScrollView showsVerticalScrollIndicator={false}>
-    
- <View style={styles.btnCov}>
-                {/* Animated sliding background */}
-                <Animated.View
-                  style={[styles.slider, { transform: [{ translateX }] }]}
-                />
+              <Text
+                style={[
+                  styles.btntxt,
+                  tabopt === 0 ? styles.activeText : styles.inactiveText,
+                ]}
+              >
+                Affiliate
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.cencelBtn2}
+              onPress={() => settabopt(1)}
+              activeOpacity={0.8}
+            >
+              <Text
+                style={[
+                  styles.btntxt,
+                  tabopt === 1 ? styles.activeText : styles.inactiveText,
+                ]}
+              >
+                Company
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-                <TouchableOpacity
-                  style={styles.cencelBtn}
-                  onPress={() => settabopt(0)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.btntxt,
-                      tabopt === 0 ? styles.activeText : styles.inactiveText,
-                    ]}
-                  >
-                    Affiliate
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.cencelBtn2}
-                  onPress={() => settabopt(1)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.btntxt,
-                      tabopt === 1 ? styles.activeText : styles.inactiveText,
-                    ]}
-                  >
-                    Company
-                  </Text>
-                </TouchableOpacity>
-              </View>
-
+          {/* Form Container */}
+          <View style={styles.formContainer}>
             <Text style={styles.inptxt}>Full Name</Text>
             <View style={styles.inpcov}>
               <TextInput
                 style={styles.inputfield}
-                placeholder="Enter Full Name"
+                placeholder="Enter full name"
                 textAlign='left'
                 placeholderTextColor={Constants.customgrey2}
                 value={formik.values.name}
@@ -119,11 +132,12 @@ const SignUp = () => {
             {formik.touched.name && formik.errors.name &&
               <Text style={styles.require}>{formik.errors.name}</Text>
             }
+            
             <Text style={styles.inptxt}>Email</Text>
             <View style={styles.inpcov}>
               <TextInput
                 style={styles.inputfield}
-                placeholder="Enter Email"
+                placeholder="Enter email"
                 textAlign='left'
                 placeholderTextColor={Constants.customgrey2}
                 value={formik.values.email}
@@ -134,11 +148,12 @@ const SignUp = () => {
             {formik.touched.email && formik.errors.email &&
               <Text style={styles.require}>{formik.errors.email}</Text>
             }
+            
             <Text style={styles.inptxt}>Password</Text>
             <View style={styles.inpcov}>
               <TextInput
                 style={styles.inputfield}
-                placeholder="Enter Password"
+                placeholder="Enter password"
                 secureTextEntry={showPass}
                 placeholderTextColor={Constants.customgrey2}
                 value={formik.values.password}
@@ -165,11 +180,12 @@ const SignUp = () => {
             {formik.touched.password && formik.errors.password &&
               <Text style={styles.require}>{formik.errors.password}</Text>
             }
+            
             <Text style={styles.inptxt}>Confirm Password</Text>
             <View style={styles.inpcov}>
               <TextInput
                 style={styles.inputfield}
-                placeholder="Enter Confirm Password"
+                placeholder="Enter password"
                 secureTextEntry={showPass}
                 placeholderTextColor={Constants.customgrey2}
                 value={formik.values.conformpassword}
@@ -197,16 +213,18 @@ const SignUp = () => {
               <Text style={styles.require}>{formik.errors.conformpassword}</Text>
             }
     
-                <TouchableOpacity style={styles.btncov} onPress={formik.handleSubmit}>
-                  <Text style={styles.btntxt}>Create Account</Text>
-                </TouchableOpacity>
+            <TouchableOpacity style={styles.btncov} onPress={formik.handleSubmit}>
+              <Text style={styles.btntxt}>Create Account</Text>
+            </TouchableOpacity>
     
-                <Text style={styles.textcov2} onPress={()=>navigate('SignUp')}>
-                  <Text style={styles.lasttxt}>Have an account ? </Text>
-                  <Text style={[styles.lasttxt,{color:Constants.black,textDecorationLine:'underline'}]}>Sign In</Text>
-                </Text>
-          </ScrollView>
-          </KeyboardAvoidingView>
+            <Text style={styles.textcov2} onPress={()=>navigate('SignIn')}>
+              <Text style={styles.lasttxt}>Have an account ? </Text>
+              <Text style={[styles.lasttxt,{color:Constants.black,textDecorationLine:'underline'}]}>Sign In</Text>
+            </Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </View>
   )
 }
 

@@ -13,60 +13,42 @@ import { X, Facebook, Instagram, Twitter, Linkedin } from 'lucide-react-native';
 import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import { useIsFocused } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
-import { getAffilites } from '../../../redux/auth/authAction';
-import { sendConnectionRequest } from '../../../redux/notification/notificationAction';
+import { getNotifications, updateNotificationStatus } from '../../../redux/notification/notificationAction';
 import Header from '../../Assets/Component/Header';
 
-const Affiliates = () => {
+const Notification = () => {
   const dispatch = useDispatch();
-  const [affilitList, setAfilitList] = useState([]);
+  const [notificationList, setNotificationList] = useState([]);
   const [page, setPage] = useState(1);
   const [curentData, setCurrentData] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
-  const [selectedAffiliate, setSelectedAffiliate] = useState(null);
+  const [selectedNotification, setSelectedNotification] = useState(null);
   const IsFocused = useIsFocused();
 
   useEffect(() => {
-    {
-      IsFocused && getAffilite(1);
+    if (IsFocused) {
+      getNotificationData(1);
     }
   }, [IsFocused]);
 
-  const getAffilite = (p) => {
-    setPage(p)
-    dispatch(getAffilites({p}))
+  const getNotificationData = (p) => {
+    setPage(p);
+    dispatch(getNotifications({ p }))
       .unwrap()
       .then(data => {
-        console.log('data', data);
         setCurrentData(data);
         if (p === 1) {
-          setAfilitList(data);
+          setNotificationList(data);
         } else {
-          setAfilitList([...affilitList, ...data]);
+          setNotificationList([...notificationList, ...data]);
         }
       })
       .catch(error => {
-        console.error('Get Affiliates failed:', error);
-      });
-  };
-  const fetchNextPage = () => {
-    if (curentData.length === 20) {
-      getAffilite(page + 1);
-    }
-  };
-
-  const handleSendRequest = (affiliateId) => {
-    dispatch(sendConnectionRequest({ affiliate_id: affiliateId }))
-      .unwrap()
-      .then(() => {
-        setModalVisible(false);
-      })
-      .catch(error => {
-        console.error('Send request failed:', error);
+        console.error('Get notifications failed:', error);
       });
   };
 
-  const getSocialMediaIcons = (affiliate) => {
+  const getSocialMediaIcons = (user) => {
     const icons = [];
     const socialMediaConfig = {
       facebook: { IconComponent: Facebook, color: '#1877F2' },
@@ -75,10 +57,15 @@ const Affiliates = () => {
       linkedin: { IconComponent: Linkedin, color: '#0A66C2' },
     };
 
-    // Check if affiliate has socialMedia field and it's not empty
-    if (affiliate?.socialMedia && typeof affiliate.socialMedia === 'object') {
-      Object.keys(affiliate.socialMedia).forEach((platform) => {
-        if (affiliate.socialMedia[platform] && affiliate.socialMedia[platform].trim() !== '') {
+    // Debug: Log the user data to see what we're receiving
+    console.log('User data in getSocialMediaIcons:', user);
+    console.log('User socialMedia:', user?.socialMedia);
+
+    // Check if user has socialMedia field and it's not empty
+    if (user?.socialMedia && typeof user.socialMedia === 'object') {
+      Object.keys(user.socialMedia).forEach((platform) => {
+        console.log(`Checking platform ${platform}:`, user.socialMedia[platform]);
+        if (user.socialMedia[platform] && user.socialMedia[platform].trim() !== '') {
           const config = socialMediaConfig[platform];
           if (config) {
             icons.push(
@@ -91,61 +78,131 @@ const Affiliates = () => {
       });
     }
 
+    console.log('Generated icons count:', icons.length);
     return icons;
+  };
+
+  const getDummyNotifications = () => {
+    const dummyData = [
+      {
+        id: 1,
+        type: 'Connection request',
+        message: 'You have a notification from Williams',
+        user: {
+          name: 'Williams',
+          email: 'williams455@gmail.com',
+          phone: '+46 825755276',
+          image: null
+        },
+        timestamp: new Date()
+      },
+      {
+        id: 2,
+        type: 'Connection request',
+        message: 'You have a notification from Sarah',
+        user: {
+          name: 'Sarah Johnson',
+          email: 'sarah.johnson@gmail.com',
+          phone: '+46 825755277',
+          image: null
+        },
+        timestamp: new Date()
+      }
+    ];
+    setNotificationList(dummyData);
+  };
+
+  const handleAccept = () => {
+    if (selectedNotification?._id) {
+      dispatch(updateNotificationStatus({
+        notification_id: selectedNotification._id,
+        status: 'accepted'
+      }))
+      .unwrap()
+      .then(() => {
+        setModalVisible(false);
+        getNotificationData(1);
+      })
+      .catch(error => {
+        console.error('Accept failed:', error);
+      });
+    }
+  };
+
+  const handleReject = () => {
+    if (selectedNotification?._id) {
+      dispatch(updateNotificationStatus({
+        notification_id: selectedNotification._id,
+        status: 'rejected'
+      }))
+      .unwrap()
+      .then(() => {
+        setModalVisible(false);
+        getNotificationData(1);
+      })
+      .catch(error => {
+        console.error('Reject failed:', error);
+      });
+    }
+  };
+
+  const fetchNextPage = () => {
+    if (curentData.length === 20) {
+      getNotificationData(page + 1);
+    }
   };
 
   return (
     <View style={styles.container}>
       <View style={{marginHorizontal:20}}>
-      <Header item={"Affiliate Management"} /></View>
+        <Header item={"Notification"} showback={true} />
+      </View>
     
       <FlatList
-        data={affilitList}
+        data={notificationList}
         ListEmptyComponent={() => (
-            <View
+          <View
+            style={{
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: Dimensions.get('window').height - 200,
+            }}>
+            <Text
               style={{
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: Dimensions.get('window').height - 200,
+                color: Constants.black,
+                fontSize: 18,
+                fontFamily: FONTS.Medium,
               }}>
-              <Text
-                style={{
-                  color: Constants.black,
-                  fontSize: 18,
-                  fontFamily: FONTS.Medium,
-                }}>
-                No Affiliates Found
-              </Text>
-            </View>
-          )}
+              No Notifications Found
+            </Text>
+          </View>
+        )}
         renderItem={({ item, index }) => (
-          <View style={[styles.card,{marginBottom:affilitList?.length-1===index?80:0}]}>
+          <View style={[styles.card,{marginBottom:notificationList?.length-1===index?80:0}]}>
             <View style={styles.frowbet}>
               <View style={styles.frow}>
-                <Image source={item?.image?{uri:item.image}:require('../../Assets/Images/profilee.png')} style={styles.imgst}/>
-              <View>
-              <Text style={styles.nametxt}>{item?.name}</Text>
-              <Text>{item?.email}</Text>
-              </View>
+                <View>
+                  <Text style={styles.nametxt}>{item?.title || 'Connection request'}</Text>
+                  <Text style={styles.messageTxt}>{item?.description || `You have a notification from ${item?.from?.name}`}</Text>
+                </View>
               </View>
               <TouchableOpacity style={styles.btncov} onPress={()=>{
-                setSelectedAffiliate(item);
+                setSelectedNotification(item);
                 setModalVisible(true);
               }}>
-              <Text style={styles.btntxt}>View</Text>
+                <Text style={styles.btntxt}>View</Text>
               </TouchableOpacity>
             </View>
           </View>
         )}
         onEndReached={() => {
-            if (affilitList && affilitList.length > 0) {
-              fetchNextPage();
-            }
-          }}
-          onEndReachedThreshold={0.05}
+          if (notificationList && notificationList.length > 0) {
+            fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.05}
       />
 
-    
       <Modal
         animationType="fade"
         transparent={true}
@@ -154,7 +211,6 @@ const Affiliates = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-        
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setModalVisible(false)}
@@ -162,23 +218,23 @@ const Affiliates = () => {
               <X size={20} color={Constants.black} />
             </TouchableOpacity>
 
-         
             <View style={styles.verticalDivider} />
 
             <View style={styles.profileSection}>
               <Image 
-                source={selectedAffiliate?.image ? {uri: selectedAffiliate.image} : require('../../Assets/Images/profilee.png')} 
+                source={selectedNotification?.from?.image ? {uri: selectedNotification.from.image} : require('../../Assets/Images/profilee.png')} 
                 style={styles.modalProfileImage}
               />
               
               <View style={styles.profileTextContainer}>
-                <Text style={styles.modalName}>{selectedAffiliate?.name}</Text>
-                <Text style={styles.modalEmail}>{selectedAffiliate?.email}</Text>
+                <Text style={styles.modalName}>{selectedNotification?.from?.name}</Text>
+                <Text style={styles.modalEmail}>{selectedNotification?.from?.email}</Text>
+                <Text style={styles.modalPhone}>{selectedNotification?.from?.phone}</Text>
                 
                 {/* Dynamic Social Media Icons */}
                 <View style={styles.socialContainer}>
-                  {getSocialMediaIcons(selectedAffiliate).length > 0 ? (
-                    getSocialMediaIcons(selectedAffiliate)
+                  {getSocialMediaIcons(selectedNotification?.from).length > 0 ? (
+                    getSocialMediaIcons(selectedNotification?.from)
                   ) : (
                     <Text style={styles.noSocialText}>No social media links available</Text>
                   )}
@@ -186,25 +242,24 @@ const Affiliates = () => {
               </View>
             </View>
 
-          
             <View style={styles.divider} />
 
-       
-            <TouchableOpacity 
-              style={styles.requestButton}
-              onPress={() => handleSendRequest(selectedAffiliate?._id)}
-            >
-              <Text style={styles.requestButtonText}>Request</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity style={styles.rejectButton} onPress={handleReject}>
+                <Text style={styles.rejectButtonText}>Reject</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.acceptButton} onPress={handleAccept}>
+                <Text style={styles.acceptButtonText}>Accept</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
-
     </View>
   );
 };
 
-export default Affiliates;
+export default Notification;
 
 const styles = StyleSheet.create({
   container: {
@@ -217,16 +272,10 @@ const styles = StyleSheet.create({
     width:'90%',
     alignSelf:'center',
     borderRadius:8,
-boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
+    boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
     padding:15,
     backgroundColor:Constants.white,
-    minHeight: 100,
-  },
-  cardimg: {
-    height: 150,
-    borderTopLeftRadius:15,
-    borderTopRightRadius:15,
-    width: '100%',
+    minHeight: 80,
   },
   frowbet: {
     flexDirection: 'row',
@@ -236,29 +285,21 @@ boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
   frow: {
     flexDirection: 'row',
     gap:15,
-  },
-  iconcov: {
-    backgroundColor: '#B3B0B154',
-    padding: 10,
-    borderRadius: 25,
+    flex: 1,
   },
   nametxt: {
-    fontSize: 14,
+    fontSize: 16,
     color: Constants.black,
     fontFamily: FONTS.SemiBold,
+    marginBottom: 5,
   },
-  ctacov:{
-    backgroundColor:'#94F9C8',
-    paddingHorizontal:15,
-    paddingVertical:2,
-    borderRadius:15,
-    lineHeight:20,
-    fontSize:14,
-    color:Constants.black,
-    fontFamily:FONTS.SemiBold
+  messageTxt: {
+    fontSize: 14,
+    color: Constants.customgrey2,
+    fontFamily: FONTS.Regular,
   },
   btncov:{
-    height:25,
+    height:30,
     width:70,
     backgroundColor:Constants.custom_yellow,
     borderRadius:10,
@@ -270,11 +311,6 @@ boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
     fontSize:14,
     color:Constants.black,
     fontFamily:FONTS.SemiBold
-  },
-  imgst:{
-    height:50,
-    width:50,
-    borderRadius:25,
   },
   modalOverlay: {
     flex: 1,
@@ -294,11 +330,12 @@ boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
     position: 'absolute',
     top: 15,
     right: 15,
-    // padding: 8,
+    padding: 8,
     borderWidth: 1,
     borderColor: Constants.black,
     borderRadius: 20,
     backgroundColor:"#F9F7ED",
+    zIndex: 10,
   },
   profileSection: {
     flexDirection: 'row',
@@ -354,12 +391,13 @@ boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
     flexDirection: 'row',
     gap: 10,
     marginTop: 10,
-   
   },
   socialIcon: {
     backgroundColor:Constants.white,
     padding: 8,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
   },
   noSocialText: {
     fontSize: 12,
@@ -367,16 +405,36 @@ boxShadow: '0px 1.5px 5px 0.1px rgba(128, 128, 128, 0.5)',
     color: Constants.customgrey2,
     fontStyle: 'italic',
   },
-  requestButton: {
-    backgroundColor: Constants.custom_yellow,
-    paddingHorizontal: 20,
-    paddingVertical: 5,
-    borderRadius: 8,
-    alignSelf: 'center',
-    margin: 20,
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    gap: 10,
   },
-  requestButtonText: {
-    fontSize: 16,
+  rejectButton: {
+    flex: 1,
+    backgroundColor: Constants.white,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Constants.customgrey2,
+  },
+  acceptButton: {
+    flex: 1,
+    backgroundColor: Constants.custom_yellow,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  rejectButtonText: {
+    fontSize: 14,
+    fontFamily: FONTS.SemiBold,
+    color: Constants.black,
+  },
+  acceptButtonText: {
+    fontSize: 14,
     fontFamily: FONTS.SemiBold,
     color: Constants.black,
   },

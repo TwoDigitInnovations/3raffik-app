@@ -5,17 +5,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Constants.white,
-    padding: wp(4),
+  },
+  backgroundImage: {
+    position: 'absolute',
+    top: -155,
+    left: 0,
+    right: 0,
+    width: '100%',
+    height: '90%',
+    zIndex: 0,
+  },
+  keyboardContainer: {
+    flex: 1,
+    zIndex: 2,
+    justifyContent: 'center',
+  },
+  scrollContainer: {
+    flex: 1,
+    zIndex: 2,
+    paddingHorizontal: wp(4),
+  },
+  formContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    borderRadius: 20,
+    padding: 25,
+    marginTop: 20,
+    marginBottom: 30,
+    alignSelf: 'center',
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 6,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 8,
   },
   headtxt: {
-    fontSize: wp(5),
+    fontSize: wp(5) + 4,
     color: Constants.black,
     fontFamily: FONTS.SemiBold,
-    marginVertical:hp(2),
+    marginTop: -30,
+    marginBottom: hp(0.5),
     alignSelf:'center',
+    textDecorationLine: 'underline',
   },
   imgcov:{
-    marginTop:hp(6),
+    marginTop:hp(4),
     borderWidth:1,
     borderColor:Constants.custom_yellow,
     borderRadius:wp(55),
@@ -25,23 +62,23 @@ const styles = StyleSheet.create({
     padding:wp(2)
   },
   proimg:{
-    height: hp(24),
-    width: wp(50),
+    height: hp(18),
+    width: wp(20),
     // marginTop:hp(6),
     resizeMode:'contain',
     alignSelf:'center',
     // backgroundColor:'red'
   },
   inpcov:{
-    height:50,
+    height:55,
     borderWidth:1,
-    borderColor:Constants.customgrey6,
-    borderRadius:10,
-    backgroundColor:Constants.light_yellow,
-    // marginTop:15,
+    borderColor:'rgba(0, 0, 0, 0.1)',
+    borderRadius:25,
+    backgroundColor:'rgba(255, 255, 255, 0.7)',
     flexDirection:'row',
     alignItems:'center',
-    paddingHorizontal:10
+    paddingHorizontal:20,
+    marginBottom: 18,
   },
   inpcov2:{
     height:50,
@@ -55,33 +92,41 @@ const styles = StyleSheet.create({
     paddingHorizontal:10
   },
   inputfield:{
-    fontSize:wp(3),
+    fontSize:14,
     color:Constants.black,
     flex:1,
     fontFamily:FONTS.Medium,
-    // backgroundColor:'red'
+    lineHeight: 14,
+    paddingVertical: 15,
   },
   inptxt:{
-    fontSize: wp(4),
+    fontSize: 16,
     color: Constants.black,
-    fontFamily: FONTS.Medium,
-    marginBottom:hp(0.5),
-    marginTop:20
+    fontFamily: FONTS.SemiBold,
+    marginTop: 10,
+    marginBottom: 8,
   },
   btncov:{
-    width:wp(90),
-    backgroundColor:Constants.custom_yellow,
-    borderRadius:wp(3),
-    height:hp(5.5),
-    justifyContent:'center',
-    alignItems:'center',
-    marginTop:hp(5),
-    boxShadow: '0px 1.5px 5px 0.1px grey'
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Constants.custom_yellow,
+    marginTop: 20,
+    marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
   btntxt:{
-    fontSize:wp(4.5),
-    color:Constants.black,
-    fontFamily:FONTS.SemiBold
+    fontSize: 16,
+    color: Constants.black,
+    fontFamily: FONTS.SemiBold,
   },
   forgtxt:{
     fontSize:wp(3.5),
@@ -97,9 +142,9 @@ const styles = StyleSheet.create({
     bottom:20
   },
   textcov2:{
-    marginTop:hp(5),
+    marginTop: 20,
     alignSelf:'center',
-    marginBottom:30
+    marginBottom: 10,
   },
   lasttxt:{
     fontSize:wp(4),
@@ -109,34 +154,41 @@ const styles = StyleSheet.create({
   require: {
     color: Constants.red,
     fontFamily: FONTS.Medium,
-    marginLeft: wp(2),
-    marginTop: hp(0.7),
-    fontSize: wp(3.5),
-    alignSelf:'flex-start'
-    // marginTop:10
+    marginLeft: 10,
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 10,
   },
 
    ////toggle button
 btnCov: {
   height: 50,
-  // marginHorizontal:20,
   flexDirection: 'row',
-  backgroundColor: Constants.light_yellow,
-  borderRadius: 12,
-  marginVertical: 15,
-  // marginHorizontal: 20,
+  backgroundColor: 'transparent',
+  borderRadius: 25,
+  marginVertical: 20,
+  marginTop: 80,
   overflow: 'hidden',
   position: 'relative',
+  borderWidth: 1,
+  borderColor: Constants.black,
 },
 slider: {
   position: 'absolute',
   width: '50%',
   height: '100%',
-  backgroundColor: Constants.custom_yellow,
-  borderRadius: 10,
+  backgroundColor: Constants.white,
+  borderRadius: 23,
   zIndex: 0,
+  margin: 2,
 },
 cencelBtn: {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1,
+},
+cencelBtnActive: {
   flex: 1,
   alignItems: 'center',
   justifyContent: 'center',
@@ -148,11 +200,95 @@ cencelBtn2: {
   justifyContent: 'center',
   zIndex: 1,
 },
+cencelBtn2Active: {
+  flex: 1,
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1,
+},
 activeText: {
   color: Constants.black,
 },
 inactiveText: {
   color: Constants.customgrey,
+},
+iconView: {
+  padding: 10,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
+
+// Suspended Modal Styles
+modalOverlay: {
+  flex: 1,
+  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding: 20,
+},
+modalContainer: {
+  backgroundColor: Constants.white,
+  borderRadius: 20,
+  padding: 30,
+  width: '90%',
+  maxWidth: 400,
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 10,
+  },
+  shadowOpacity: 0.3,
+  shadowRadius: 20,
+  elevation: 10,
+},
+modalIconContainer: {
+  width: 80,
+  height: 80,
+  borderRadius: 40,
+  backgroundColor: '#FEF3C7',
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginBottom: 20,
+},
+modalIcon: {
+  fontSize: 40,
+},
+modalTitle: {
+  fontSize: 22,
+  fontFamily: FONTS.Bold,
+  color: Constants.black,
+  marginBottom: 15,
+  textAlign: 'center',
+},
+modalMessage: {
+  fontSize: 15,
+  fontFamily: FONTS.Regular,
+  color: Constants.customgrey,
+  textAlign: 'center',
+  lineHeight: 22,
+  marginBottom: 25,
+},
+modalButton: {
+  backgroundColor: Constants.custom_yellow,
+  paddingVertical: 14,
+  paddingHorizontal: 50,
+  borderRadius: 25,
+  width: '100%',
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+  shadowOpacity: 0.2,
+  shadowRadius: 4,
+  elevation: 3,
+},
+modalButtonText: {
+  fontSize: 16,
+  fontFamily: FONTS.SemiBold,
+  color: Constants.black,
 },
 /////
 

@@ -17,7 +17,8 @@ import { logout } from '../../../redux/auth/authAction';
 // import LanguageChange from '../../Assets/Component/LanguageChange';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setLanguage } from '../../../redux/location/locationSlice';
-import { ChevronRight, CircleX, FileTerminal, LogOut, NotepadText, Shield, ShieldAlert, Trash2, User } from 'lucide-react-native';
+import { ChevronRight, CircleX, FileTerminal, LogOut, NotepadText, Shield, ShieldAlert, Trash2, User, Bell, Wallet } from 'lucide-react-native';
+import Header from '../../Assets/Component/Header';
 
 const Account = () => {
   const dispatch = useDispatch();
@@ -65,9 +66,21 @@ dispatch(logout())
   }
   return (
     <View style={styles.container}>
-      <Text style={styles.headtxt}>My Account</Text>
+      
+      <View style={styles.overlayWrapper}>
+        <View style={styles.overlayColor} />
+      </View>
+      
+      {/* Vertical overlay on the right */}
+      <View style={styles.verticalOverlayWrapper}>
+        <View style={styles.verticalOverlayColor} />
+      </View>
+      
+      <View style={{marginHorizontal:20, zIndex: 2, paddingTop: 20}}>
+        <Header item={"My Account"} showback={true} />
+      </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} style={{zIndex: 2, flex: 1, backgroundColor: 'transparent'}}>
         <TouchableOpacity
           style={styles.topcard}
           onPress={() => navigate('Profile')}>
@@ -82,7 +95,7 @@ dispatch(logout())
             }
             style={styles.proimg}
           />
-          <View style={{marginTop: 5,}}>
+          <View style={{marginTop: 5, marginLeft: 20}}>
             <Text style={styles.protxt}>{user?.name}</Text>
             <Text style={styles.protxt2}>{user?.email}</Text>
           </View>
@@ -90,19 +103,49 @@ dispatch(logout())
         {/* <View style={[styles.horline, {marginHorizontal: 20}]}></View> */}
         <View
           style={{
-            marginTop: 10,
-            backgroundColor: Constants.white,
+            marginTop: 40,
+            backgroundColor: 'transparent',
             marginBottom: 70,
           }}>
           {/* <Text style={styles.partheadtxt}>Profile</Text> */}
           <TouchableOpacity
             style={[styles.box]}
-            onPress={() => navigate('Profile')}>
+            onPress={() => navigate('MyProfile')}>
             <View style={styles.btmboxfirpart}>
               <View style={styles.iconcov}>
                 <User size={17} color={Constants.black}/>
               </View>
               <Text style={styles.protxt}>Personal Data</Text>
+            </View>
+            <ChevronRight
+              color={Constants.black}
+              size={15}
+              style={styles.aliself}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.box]}
+            onPress={() => navigate('CompanyWallet')}>
+            <View style={styles.btmboxfirpart}>
+              <View style={styles.iconcov}>
+                <Wallet size={17} color={Constants.black}/>
+              </View>
+              <Text style={styles.protxt}>Wallet</Text>
+            </View>
+            <ChevronRight
+              color={Constants.black}
+              size={15}
+              style={styles.aliself}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.box]}
+            onPress={() => navigate('CompanyNotification')}>
+            <View style={styles.btmboxfirpart}>
+              <View style={styles.iconcov}>
+                <Bell size={17} color={Constants.black}/>
+              </View>
+              <Text style={styles.protxt}>Notifications</Text>
             </View>
             <ChevronRight
               color={Constants.black}
@@ -131,7 +174,7 @@ dispatch(logout())
           </TouchableOpacity> */}
           <TouchableOpacity
             style={[styles.box]}
-            onPress={() => InAppBrowserFunc('https://main.d2i61b55rlnfpm.amplifyapp.com/PrivacyPolicy')}
+            onPress={() => navigate('PrivacyPolicy')}
             >
             <View style={styles.btmboxfirpart}>
               <View style={styles.iconcov}>
@@ -147,7 +190,7 @@ dispatch(logout())
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.box]}
-            onPress={() => InAppBrowserFunc('https://main.d2i61b55rlnfpm.amplifyapp.com/TermsandConditions')}
+            onPress={() => navigate('TermsConditions')}
             >
             <View style={styles.btmboxfirpart}>
               <View style={styles.iconcov}>
@@ -161,27 +204,10 @@ dispatch(logout())
               style={styles.aliself}
             />
           </TouchableOpacity>
+          {/* Support */}
           <TouchableOpacity
             style={[styles.box]}
-            onPress={() => InAppBrowserFunc('https://main.d2i61b55rlnfpm.amplifyapp.com/TermsandConditions')}
-            >
-            <View style={styles.btmboxfirpart}>
-              <View style={styles.iconcov}>
-                <NotepadText size={17} color={Constants.black}/>
-              </View>
-              <Text style={styles.protxt}>My Plan</Text>
-            </View>
-            <ChevronRight
-              color={Constants.black}
-              size={15}
-              style={styles.aliself}
-            />
-          </TouchableOpacity>
-          {/* <Text style={styles.partheadtxt}>Support</Text> */}
-          <TouchableOpacity
-            style={[styles.box]}
-            onPress={() => InAppBrowserFunc('https://tawk.to/chat/68e0fa0c4db84c19518e60e8/1j6nd1gbd')}
-            >
+            onPress={() => navigate('HelpCenter')}>
             <View style={styles.btmboxfirpart}>
               <View style={styles.iconcov}>
                 <Shield size={17} color={Constants.black}/>
@@ -331,15 +357,38 @@ export default Account;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F8F8F8',
-    // paddingVertical: 20,
+    backgroundColor: 'white',
+    overflow: 'hidden',
   },
-  headtxt: {
-    fontSize: 16,
-    color: Constants.black,
-    fontFamily: FONTS.SemiBold,
-    textAlign: 'center',
-    marginTop: 10,
+  overlayWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 170,
+    zIndex: 1,
+    overflow: 'hidden',
+    borderBottomLeftRadius: 100,
+  },
+  overlayColor: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFCC00',
+  },
+  verticalOverlayWrapper: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: 80,
+    zIndex: 1,
+    overflow: 'hidden',
+    borderTopLeftRadius: 50,
+  },
+  verticalOverlayColor: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFCC00',
   },
   protxt: {
     color: Constants.black,
@@ -347,22 +396,23 @@ const styles = StyleSheet.create({
     fontFamily: FONTS.SemiBold,
   },
   protxt2: {
-    color: Constants.customgrey2,
+    color: Constants.black,
     fontSize: 12,
     fontFamily: FONTS.Regular,
   },
   box: {
     paddingHorizontal: 15,
     marginVertical: 10,
-    backgroundColor: Constants.light_yellow,
+    // backgroundColor: Constants.white,
     width: '90%',
     alignSelf: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderRadius:10,
     paddingVertical:7,
-    borderWidth:1,
-    borderColor:Constants.customgrey2
+   
+    // borderWidth:1,
+    // borderColor:Constants.customgrey2
   },
   aliself: {
     alignSelf: 'center',

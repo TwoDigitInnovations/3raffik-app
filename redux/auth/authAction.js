@@ -48,7 +48,19 @@ export const login = createAsyncThunk(
   async (params, thunkAPI) => {
     try {
       const res = await axios.post('auth/login', params);
-      showToaster('success','Login successful');
+      
+      // Check if account is suspended
+      if (res?.data?.status === 'suspended' || res?.status === false) {
+        return thunkAPI.rejectWithValue({
+          response: {
+            data: {
+              status: 'suspended',
+              message: 'Your account has been suspended. Please contact support team.'
+            }
+          }
+        });
+      }
+      
       if (res?.data) {
           setApiToken(res?.data.token);
           console.log('logintoken',res?.data.token)
@@ -65,7 +77,18 @@ export const login = createAsyncThunk(
       }
       return res?.data;
     } catch (error) {
-      showToaster('error',error);
+      // Check if error message contains suspended
+      const errorMessage = typeof error === 'string' ? error : error?.message || 'Login failed';
+      
+      if (errorMessage?.includes('suspended')) {
+        // Don't show toast, let SignIn.js handle modal
+        return thunkAPI.rejectWithValue({
+          message: errorMessage,
+          isSuspended: true
+        });
+      } else {
+        showToaster('error', errorMessage);
+      }
       return thunkAPI.rejectWithValue(error);
     }
   },
@@ -172,7 +195,7 @@ export const getAffilites = createAsyncThunk(
   'auth/getAllAffiliates',
   async (params, thunkAPI) => {
     try {
-      const {data}= await axios.get(`auth/getAllAffiliates?page=${params}`,);
+      const {data}= await axios.get(`auth/getAllAffiliates?page=${params?.p}`);
       return data;
     } catch (error) {
       showToaster('error',error);

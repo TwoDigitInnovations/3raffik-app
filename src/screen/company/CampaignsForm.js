@@ -3,7 +3,7 @@ import Constants, { FONTS } from '../../Assets/Helpers/constant'
 import React, { useEffect, useState } from 'react'
 import { hp } from '../../../utils/responsiveScreen'
 import Header from '../../Assets/Component/Header'
-import { Circle, CircleDot, Upload } from 'lucide-react-native'
+import { ChevronDown, Upload } from 'lucide-react-native'
 import CameraGalleryPeacker from '../../Assets/Component/CameraGalleryPeacker'
 import { goBack } from '../../../utils/navigationRef'
 import { createCampaign, getCampaignbyId, updateCampaign } from '../../../redux/campaign/campaignAction'
@@ -14,6 +14,7 @@ const CampaignsForm = (props) => {
   const dispatch = useDispatch();
   const [submitted, setSubmitted] = useState(false);
   const [showImagePicker, setShowImagePicker] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [campaignModel, setCampaignModel] = useState({
     name: '',
     description: '',
@@ -137,16 +138,36 @@ const CampaignsForm = (props) => {
             <Text style={styles.require}>Website Url is required</Text>
           )}
         <Text style={styles.inptxt}>Status</Text>
-        <View style={styles.staopt}>
-          <TouchableOpacity style={styles.checkline} onPress={()=>setCampaignModel({...campaignModel,status:'Active'})}>
-                {campaignModel?.status==='Active'?<CircleDot size={20} color={Constants.black} />:<Circle size={20} color={Constants.black} />}
-                <Text style={styles.chectxt}>Active</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.checkline} onPress={()=>setCampaignModel({...campaignModel,status:'Inactive'})}>
-                {campaignModel?.status==='Inactive'?<CircleDot size={20} color={Constants.black} />:<Circle size={20} color={Constants.black} />}
-                <Text style={styles.chectxt}>Inactive</Text>
-              </TouchableOpacity>
-        </View>
+        <TouchableOpacity 
+          style={styles.dropdownContainer} 
+          onPress={() => setShowStatusDropdown(!showStatusDropdown)}
+        >
+          <Text style={styles.dropdownText}>{campaignModel?.status}</Text>
+          <ChevronDown size={20} color={Constants.black} />
+        </TouchableOpacity>
+        
+        {showStatusDropdown && (
+          <View style={styles.dropdownOptions}>
+            <TouchableOpacity 
+              style={styles.dropdownOption}
+              onPress={() => {
+                setCampaignModel({...campaignModel, status: 'Active'});
+                setShowStatusDropdown(false);
+              }}
+            >
+              <Text style={styles.dropdownOptionText}>Active</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.dropdownOption}
+              onPress={() => {
+                setCampaignModel({...campaignModel, status: 'Inactive'});
+                setShowStatusDropdown(false);
+              }}
+            >
+              <Text style={styles.dropdownOptionText}>Inactive</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <TouchableOpacity style={styles.btncov} onPress={submit}>
               <Text style={styles.btntxt}>{data?"Update":"Launch"} Campaign</Text>
             </TouchableOpacity>
@@ -176,7 +197,7 @@ const styles = StyleSheet.create({
     borderWidth:1,
     borderColor:Constants.customgrey6,
     borderRadius:10,
-    backgroundColor:Constants.light_yellow,
+    backgroundColor:Constants.white,
     // marginTop:15,
     // flexDirection:'row',
     // alignItems:'center',
@@ -187,7 +208,7 @@ const styles = StyleSheet.create({
     borderWidth:1,
     borderColor:Constants.customgrey6,
     borderRadius:10,
-    backgroundColor:Constants.light_yellow,
+    backgroundColor:Constants.white,
     paddingHorizontal:10,
     // marginTop:15,
     justifyContent:'center',
@@ -198,7 +219,7 @@ const styles = StyleSheet.create({
     borderWidth:1,
     borderColor:Constants.customgrey6,
     borderRadius:10,
-    backgroundColor:Constants.light_yellow,
+    backgroundColor:Constants.white,
     paddingHorizontal:10
   },
   inptxt:{
@@ -225,16 +246,46 @@ const styles = StyleSheet.create({
     padding:10,
     borderRadius:25
   },
-  checkline:{
-    flexDirection:'row',
-    gap:10,
-    marginVertical:5,
-    alignSelf:'flex-start'
+  dropdownContainer: {
+    height: 50,
+    borderWidth: 1,
+    borderColor: Constants.customgrey6,
+    borderRadius: 10,
+    backgroundColor: Constants.white,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  chectxt:{
+  dropdownText: {
     fontSize: 14,
     color: Constants.black,
-    fontFamily: FONTS.SemiBold,
+    fontFamily: FONTS.Medium,
+  },
+  dropdownOptions: {
+    borderWidth: 1,
+    borderColor: Constants.customgrey6,
+    borderRadius: 10,
+    backgroundColor: Constants.white,
+    marginTop: 5,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  dropdownOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: Constants.customgrey6,
+  },
+  dropdownOptionText: {
+    fontSize: 14,
+    color: Constants.black,
+    fontFamily: FONTS.Medium,
   },
   btncov:{
     width:'100%',
@@ -252,10 +303,6 @@ const styles = StyleSheet.create({
     fontSize:14,
     color:Constants.black,
     fontFamily:FONTS.SemiBold
-  },
-  staopt:{
-    flexDirection:'row',
-    gap:50
   },
   require: {
     color: Constants.red,

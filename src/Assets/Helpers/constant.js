@@ -1,4 +1,4 @@
-const prodUrl = 'http://192.168.0.187:8001/';
+const prodUrl = 'http://192.168.1.14:8001/';
 //  const prodUrl = 'http://10.112.185.202:8001/';
 // const prodUrl = 'https://api.bokakorning.online/';
 // const prodUrl = 'http://10.80.19.103:3000/';
@@ -25,6 +25,8 @@ const Constants = {
   light_blue2: '#cae8f1',
   light_blue3: '#eaf8ff',
   light_blue: '#74d7fa',
+  new_yellow:'#F9F7ED',
+  modalcolor:'#F9F7ED',
 
 
   emailValidationRegx:

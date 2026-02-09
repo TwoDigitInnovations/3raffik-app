@@ -15,21 +15,19 @@ import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import { hp, wp } from '../../../utils/responsiveScreen';
 import { useIsFocused } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getProductbyCompany } from '../../../redux/product/productAction';
+import { getAffiliateCommissionedProducts } from '../../../redux/wallet/walletAction';
 import Header from '../../Assets/Component/Header';
 import moment from 'moment';
 import QRCode from 'react-native-qrcode-svg';
 import Clipboard from '@react-native-clipboard/clipboard';
 
-const Products = (props) => {
-  const campaign_id = props?.route?.params?.campaign_id;
+const MyProducts = (props) => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
+  const { commissionedProducts, isLoading } = useSelector(state => state.wallet);
   const [imageError, setImageError] = useState(false);
-  const [productList, setProductList] = useState([]);
   const [searchkey, setsearchkey] = useState('');
-  const [page, setPage] = useState(1);
-  const [curentData, setCurrentData] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const IsFocused = useIsFocused();
   
   const isValidUrl = (url) =>
@@ -38,9 +36,9 @@ const Products = (props) => {
   const generateQRData = (item) => {
     const trackingUrl = `http://localhost:3000/product?` +
       `productId=${item._id}&` +
-      `campaignId=${campaign_id}&` +
+      `campaignId=${item.campaign?._id || 'campaign_id'}&` +
       `affiliateId=${user?.id || 'affiliate_id'}&` +
-      `companyId=${user?.id || 'company_id'}&` +
+      `companyId=auto&` +
       `timestamp=${Date.now()}`;
     
     return trackingUrl;
@@ -59,38 +57,31 @@ const Products = (props) => {
   };
 
   useEffect(() => {
-    if (IsFocused && campaign_id) {
-      getProduct(1);
+    if (IsFocused) {
+      dispatch(getAffiliateCommissionedProducts({ page: 1 }));
     }
-  }, [IsFocused]);
+  }, [IsFocused, dispatch]);
 
-  const getProduct = (p, text) => {
-    setPage(p);
-    dispatch(getProductbyCompany({ campaign_id, p, text }))
-      .unwrap()
-      .then(data => {
-        setCurrentData(data);
-        if (p === 1) {
-          setProductList(data);
-        } else {
-          setProductList([...productList, ...data]);
-        }
-      })
-      .catch(error => {
-        console.error('Get Product failed:', error);
-      });
-  };
-
-  const fetchNextPage = () => {
-    if (curentData.length === 20) {
-      getProduct(page + 1, searchkey);
+  useEffect(() => {
+    // Filter products based on search
+    if (searchkey.trim() === '') {
+      setFilteredProducts(commissionedProducts);
+    } else {
+      const filtered = commissionedProducts.filter(item =>
+        item.name?.toLowerCase().includes(searchkey.toLowerCase())
+      );
+      setFilteredProducts(filtered);
     }
+  }, [commissionedProducts, searchkey]);
+
+  const handleSearch = (text) => {
+    setsearchkey(text);
   };
 
   return (
     <View style={styles.container}>
       <View style={{ marginHorizontal: 20 }}>
-        <Header item={"Products"} showback={true} />
+        <Header item={"My Products"} showback={true} />
         <View style={styles.searchContainer}>
           <View style={styles.aplcov}>
             <Search
@@ -99,20 +90,18 @@ const Products = (props) => {
               color={Constants.customgrey3}
             />
             <TextInput
-              placeholder="Search"
+              placeholder="Search products..."
               placeholderTextColor={Constants.black}
               style={styles.protxtinp}
-              onChangeText={text => {
-                getProduct(1, text);
-                setsearchkey(text);
-              }}
+              value={searchkey}
+              onChangeText={handleSearch}
             />
           </View>
         </View>
       </View>
 
       <FlatList
-        data={productList}
+        data={filteredProducts}
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={() => (
           <View
@@ -126,13 +115,15 @@ const Products = (props) => {
                 color: Constants.black,
                 fontSize: 18,
                 fontFamily: FONTS.Medium,
+                textAlign: 'center',
+                marginHorizontal: 20,
               }}>
-              No Products Found
+              {isLoading ? 'Loading...' : 'No commissioned products yet\n\nStart sharing your QR codes to earn commissions!'}
             </Text>
           </View>
         )}
         renderItem={({ item, index }) => (
-          <TouchableOpacity style={[styles.card, { marginBottom: productList?.length - 1 === index ? 20 : 0 }]}>
+          <TouchableOpacity style={[styles.card, { marginBottom: filteredProducts?.length - 1 === index ? 20 : 0 }]}>
             <View style={styles.frow}>
               <TouchableOpacity 
                 style={styles.qrContainer}
@@ -146,9 +137,13 @@ const Products = (props) => {
                   backgroundColor={Constants.white}
                 />
               </TouchableOpacity>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.nametxt}>{item?.name}</Text>
-                <Text style={styles.nametxt}>{moment(item?.createdAt).format('DD MMM YYYY, hh:mm A')}</Text>
+                <Text style={styles.dateTxt}>{moment(item?.lastOrderDate).format('DD MMM YYYY, hh:mm A')}</Text>
+                <View style={styles.statsContainer}>
+                  <Text style={styles.statsTxt}>Total Earned: <Text style={styles.yellowValue}>${item?.totalCommission?.toFixed(2)}</Text></Text>
+                  <Text style={styles.statsTxt}>Orders: <Text style={styles.yellowValue}>{item?.totalOrders}</Text></Text>
+                </View>
               </View>
             </View>
             <View style={styles.horlin}></View>
@@ -164,27 +159,24 @@ const Products = (props) => {
                   onError={() => setImageError(true)}
                 />
               </View>
-              <View>
+              <View style={{ flex: 1 }}>
                 <Text style={styles.protxt}>{item?.name}</Text>
                 <Text style={styles.protxt2}>${item?.offer_price || item?.price}</Text>
                 <Text style={styles.protxt3}>Affiliate Commission - <Text style={styles.yellowValue}>{item?.affiliate_commission}%</Text></Text>
                 <Text style={styles.protxt3}>Customer Discount - <Text style={styles.yellowValue}>{item?.coustomer_discount}%</Text></Text>
+                {item?.campaign && (
+                  <Text style={styles.campaignTxt}>Campaign: <Text style={styles.yellowValue}>{item.campaign.name}</Text></Text>
+                )}
               </View>
             </View>
           </TouchableOpacity>
         )}
-        onEndReached={() => {
-          if (productList && productList.length > 0) {
-            fetchNextPage();
-          }
-        }}
-        onEndReachedThreshold={0.05}
       />
     </View>
   );
 };
 
-export default Products;
+export default MyProducts;
 
 const styles = StyleSheet.create({
   container: {
@@ -280,6 +272,28 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Constants.black,
     fontFamily: FONTS.SemiBold,
+  },
+  dateTxt: {
+    fontSize: 12,
+    color: Constants.customgrey2,
+    fontFamily: FONTS.Regular,
+    marginTop: 2,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    gap: 15,
+    marginTop: 5,
+  },
+  statsTxt: {
+    fontSize: 12,
+    color: Constants.black,
+    fontFamily: FONTS.Medium,
+  },
+  campaignTxt: {
+    fontSize: 12,
+    color: Constants.black,
+    fontFamily: FONTS.Medium,
+    marginTop: 3,
   },
   protxt: {
     fontSize: 14,

@@ -4,7 +4,7 @@ import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
 import Constants, { FONTS } from '../Assets/Helpers/constant';
 import { CircleUserRound, Headset, LayoutDashboard, Megaphone, SquareKanban } from 'lucide-react-native';
 import Dashboard from '../screen/company/Dashboard';
-import Campaigns from '../screen/company/Campaigns';
+import CompanyCampaign from '../screen/company/CompanyCampaign';
 import Account from '../screen/company/Account';
 import Affiliates from '../screen/company/Affiliates';
 
@@ -24,7 +24,7 @@ export const  CompanyTabNav=()=>{
     {
       iconActive: <Megaphone color={Constants.red} size={20} />,
       iconInActive: <Megaphone color={Constants.black} size={22} />,
-      component: Campaigns,
+      component: CompanyCampaign,
       routeName: 'Campaigns',
     },
     {

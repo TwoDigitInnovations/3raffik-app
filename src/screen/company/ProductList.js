@@ -9,6 +9,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
 import { Pencil, PlusIcon, Search, Trash2 } from 'lucide-react-native';
@@ -16,14 +17,17 @@ import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import { hp, wp } from '../../../utils/responsiveScreen';
 import { navigate } from '../../../utils/navigationRef';
 import { useIsFocused } from '@react-navigation/native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { deleteProduct, getProductbyCompany } from '../../../redux/product/productAction';
 import Header from '../../Assets/Component/Header';
 import moment from 'moment';
+import QRCode from 'react-native-qrcode-svg';
+import Clipboard from '@react-native-clipboard/clipboard';
 
 const ProductList = (props) => {
   const campaign_id = props?.route?.params?.campaign_id;
   const dispatch = useDispatch();
+  const { user } = useSelector(state => state.auth);
   const [imageError, setImageError] = useState(false);
   const [productList, setProductList] = useState([]);
   const [modelvsible, setmodelvsible] = useState(false);
@@ -33,7 +37,32 @@ const ProductList = (props) => {
   const [curentData, setCurrentData] = useState([]);
   const IsFocused = useIsFocused();
   const isValidUrl = (url) =>
-  typeof url === 'string' && /^https?:\/\//i.test(url);
+    typeof url === 'string' && /^https?:\/\//i.test(url);
+
+  const generateQRData = (item, selectedAffiliate = null) => {
+    // For company products, use logged-in company's ID as company ID
+    // and allow selection of affiliate ID
+    const trackingUrl = `http://localhost:3000/product?` +
+      `productId=${item._id}&` +
+      `campaignId=${campaign_id}&` +
+      `affiliateId=${selectedAffiliate?.id || 'affiliate_id'}&` +
+      `companyId=${user?.id}&` + // Always use current company's ID
+      `timestamp=${Date.now()}`;
+    
+    return trackingUrl;
+  };
+
+  const handleQRPress = (item) => {
+    const url = generateQRData(item);
+    Clipboard.setString(url);
+    Alert.alert(
+      'URL Copied! 📋',
+      `Product link copied to clipboard:\n\n${url}`,
+      [
+        { text: 'OK', style: 'default' }
+      ]
+    );
+  };
 
   useEffect(() => {
     {
@@ -79,20 +108,22 @@ const ProductList = (props) => {
     <View style={styles.container}>
       <View style={{marginHorizontal:20}}>
        <Header item={"Products"} showback={true}/>
-        <View style={styles.aplcov}>
-          <Search
-            size={20}
-            style={{ alignSelf: 'center', marginRight: 10 }}
-            color={Constants.customgrey3}
-          />
-          <TextInput
-            placeholder="Search"
-            placeholderTextColor={Constants.customgrey2}
-            style={styles.protxtinp}
-            onChangeText={text => {
-              getProduct(1, text), setsearchkey(text);
-            }}
-          />
+        <View style={styles.searchContainer}>
+          <View style={styles.aplcov}>
+            <Search
+              size={20}
+              style={{ alignSelf: 'center', marginRight: 10 }}
+              color={Constants.customgrey3}
+            />
+            <TextInput
+              placeholder="Search"
+              placeholderTextColor={Constants.black}
+              style={styles.protxtinp}
+              onChangeText={text => {
+                getProduct(1, text), setsearchkey(text);
+              }}
+            />
+          </View>
         </View>
         </View>
 
@@ -119,44 +150,49 @@ const ProductList = (props) => {
         renderItem={({ item, index }) => (
           <TouchableOpacity style={[styles.card,{marginBottom:productList?.length-1===index?20:0}]} onPress={()=>navigate('ProductDetail',item)}>
             <View style={styles.frow}>
-            <Image
-              source={
-                !imageError && isValidUrl(item?.pho_url)
-                  ? { uri: item.pho_url }
-                  : require('../../Assets/Images/qr2.png')}
-                  resizeMode='contain'
-              style={styles.cardimg}
-              onError={() => setImageError(true)}
-            />
-            <View>
-              <Text style={styles.nametxt}>{item?.pro_det_url}</Text>
-              <Text style={styles.nametxt}>{moment(item?.cretedAt).format('DD MMM YYYY, hh:mm A')}</Text>
+              <TouchableOpacity 
+                style={styles.qrContainer}
+                onPress={() => handleQRPress(item)}
+                activeOpacity={0.7}
+              >
+                <QRCode
+                  value={generateQRData(item)}
+                  size={50}
+                  color={Constants.black}
+                  backgroundColor={Constants.white}
+                />
+              </TouchableOpacity>
+              <View>
+                <Text style={styles.nametxt}>{item?.name}</Text>
+                <Text style={styles.nametxt}>{moment(item?.createdAt).format('DD MMM YYYY, hh:mm A')}</Text>
               </View>
             </View>
             <View style={styles.horlin}></View>
             <View style={styles.frow}>
-              <Image source={
-                !imageError && isValidUrl(item?.pho_url)
-                  ? { uri: item.pho_url }
-                  : require('../../Assets/Images/bag.png')} style={{height:hp(10),width:wp(15)}}
-                  onError={() => setImageError(true)}/>
+              <View style={styles.imageContainer}>
+                <Image source={
+                  !imageError && isValidUrl(item?.product_image)
+                    ? { uri: item.product_image }
+                    : require('../../Assets/Images/bag.png')} style={styles.productImage}
+                    onError={() => setImageError(true)}/>
+              </View>
             <View >
             <View>
             <Text style={styles.protxt}>{item?.name}</Text>
-            <Text style={styles.protxt2}>${item?.price}</Text>
-            <Text style={styles.protxt3}>Affiliate Commission - {item?.affiliate_commission}%</Text>
-            <Text style={styles.protxt3}>Coustomer Discount - {item?.coustomer_discount}%</Text>
+            <Text style={styles.protxt2}>${item?.offer_price || item?.price}</Text>
+            <Text style={styles.protxt3}>Affiliate Commission - <Text style={styles.yellowValue}>{item?.affiliate_commission}%</Text></Text>
+            <Text style={styles.protxt3}>Coustomer Discount - <Text style={styles.yellowValue}>{item?.coustomer_discount}%</Text></Text>
             </View>
             </View>
               </View>
-              <View style={[styles.frow,{alignSelf:'flex-end'}]}>
-                <TouchableOpacity style={styles.iconcov} onPress={()=>navigate('AddProduct',{campaign_id:campaign_id,product_id:item?._id})}>
+              <View style={[styles.frow,{alignSelf:'flex-end', marginTop: 12}]}>
+                <TouchableOpacity style={[styles.iconcov, styles.editIcon]} onPress={()=>navigate('AddProduct',{campaign_id:campaign_id,product_id:item?._id})}>
                   <Pencil size={20} color={Constants.black} />
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.iconcov, { backgroundColor: '#eb050579' }]}
+                  style={[styles.iconcov, styles.deleteIcon]}
                   onPress={()=> {setProductId(item?._id),setmodelvsible(true)}}>
-                  <Trash2 size={20} color={Constants.black} />
+                  <Trash2 size={20} color={Constants.white} />
                 </TouchableOpacity>
               </View>
           </TouchableOpacity>
@@ -234,26 +270,84 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     backgroundColor: Constants.white,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 20,
+    gap: 5,
+    paddingHorizontal: 2,
+  },
   aplcov: {
+    flex: 1,
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: Constants.customgrey2,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    // paddingVertical: 3,
-    height: 52,
-    marginTop:10,
-    // width: wp(80),
+    borderColor: 'white',
+    borderRadius: 15,
+    paddingHorizontal: 15,
+    height: 50,
+    backgroundColor: 'white',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   protxtinp: {
     flex: 1,
     paddingHorizontal: 10,
     color: Constants.black,
+    fontFamily: FONTS.Medium,
+    fontSize: 16,
+  },
+  yellowValue: {
+    color: Constants.custom_yellow,
     fontFamily: FONTS.SemiBold,
-    fontSize: 14,
-    width: wp(75),
-    borderLeftWidth: 1,
-    borderColor: Constants.customgrey2,
+  },
+  editIcon: {
+    backgroundColor: Constants.white,
+    borderWidth: 1,
+    borderColor: Constants.black,
+  },
+  deleteIcon: {
+    backgroundColor: '#eb0505',
+  },
+  qrContainer: {
+    backgroundColor: Constants.white,
+    padding: 8,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageContainer: {
+    backgroundColor: Constants.white,
+    padding: 8,
+    borderRadius: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    marginRight: 12,
+  },
+  productImage: {
+    height: hp(10),
+    width: wp(15),
+    borderRadius: 4,
   },
   inpcov: {
     flexDirection: 'row',
@@ -279,9 +373,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     width:'90%',
     alignSelf:'center',
-    borderRadius:15,
+    borderRadius:10,
     padding:10,
-    backgroundColor:Constants.light_yellow,
+    backgroundColor:'#F9F7ED',
     boxShadow: '0px 1.5px 5px 0.1px grey',
   },
   cardimg: {
@@ -315,13 +409,15 @@ const styles = StyleSheet.create({
   },
   protxt2: {
     fontSize: 14,
-    color: Constants.black,
+    color: Constants.custom_yellow,
     fontFamily: FONTS.SemiBold,
   },
   protxt3: {
     fontSize: 14,
+    marginTop:5,
+
     color: Constants.black,
-    fontFamily: FONTS.Medium,
+    fontFamily: FONTS.Bold,
   },
   ctacov:{
     backgroundColor:'#94F9C8',

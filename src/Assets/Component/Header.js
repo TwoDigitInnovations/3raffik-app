@@ -18,7 +18,7 @@ const Header = props => {
             />
           ):<View style={{width:25}}></View>}
           <Text style={styles.backtxt}>{props?.item}</Text>
-          <View></View>
+          {props.rightIcon ? props.rightIcon : <View style={{width:25}}></View>}
         </View>
     </View>
   );
