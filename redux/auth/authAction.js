@@ -3,6 +3,7 @@ import {deleteAuthToken, getAuthToken, setAuthToken} from '../../utils/storage';
 import {showToaster} from '../../utils/toaster';
 import axios, { removeApiToken, setApiToken} from '../../utils/axios';
 import {navigate, reset} from '../../utils/navigationRef';
+import { updateOneSignalIdToBackend } from '../../src/services/oneSignalService';
 
 // For Check user login or not
 export const checkLogin = createAsyncThunk(
@@ -62,15 +63,26 @@ export const login = createAsyncThunk(
       }
       
       if (res?.data) {
+          console.log('=== LOGIN SUCCESS ===');
+          console.log('User role:', res?.data?.user?.role);
+          console.log('User ID:', res?.data?.user?.id);
+          
           setApiToken(res?.data.token);
           console.log('logintoken',res?.data.token)
           await setAuthToken(res?.data.token);
+          
+          console.log('=== CALLING ONESIGNAL UPDATE ===');
+          try {
+            await updateOneSignalIdToBackend();
+            console.log('OneSignal update completed');
+          } catch (error) {
+            console.log('=== ONESIGNAL UPDATE ERROR ===');
+            console.log('Error:', error.message);
+            console.log('Error stack:', error.stack);
+          }
+          
           if (res?.data?.user?.role==='company') {
-            // if (res?.data?.user?.status==='Approved') {
               reset('Company');
-            // } else {
-            //   navigate('Form')
-            // }
           } else {
             reset('App');
           }
@@ -99,11 +111,24 @@ export const signup = createAsyncThunk(
   'auth/signup',
   async (params, thunkAPI) => {
     try {
-      const res= await axios.post('auth/register',params);
-      showToaster('success',res?.data?.message);
-      return res?.data;
+      // Check if params contains FormData (for document upload) - same as createProduct
+      if (params instanceof FormData) {
+        // Use axios with FormData
+        const response = await axios.post('auth/register', params, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        showToaster('success', response?.data?.message || response?.message);
+        return response?.data || response;
+      } else {
+        // Regular JSON request
+        const res = await axios.post('auth/register', params);
+        showToaster('success', res?.data?.message);
+        return res?.data;
+      }
     } catch (error) {
-      showToaster('error',error);
+      showToaster('error', error);
       return thunkAPI.rejectWithValue(error);
     }
   },

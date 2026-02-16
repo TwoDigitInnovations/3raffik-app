@@ -8,14 +8,17 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Modal,
+  Share,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react-native';
+import { Search, X, Copy, Share2 } from 'lucide-react-native';
 import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import { hp, wp } from '../../../utils/responsiveScreen';
 import { useIsFocused } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProductbyCompany } from '../../../redux/product/productAction';
+import { trackClick } from '../../../redux/click/clickAction';
 import Header from '../../Assets/Component/Header';
 import moment from 'moment';
 import QRCode from 'react-native-qrcode-svg';
@@ -25,12 +28,15 @@ const Products = (props) => {
   const campaign_id = props?.route?.params?.campaign_id;
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
+  const IsFocused = useIsFocused();
+  
   const [imageError, setImageError] = useState(false);
   const [productList, setProductList] = useState([]);
   const [searchkey, setsearchkey] = useState('');
   const [page, setPage] = useState(1);
   const [curentData, setCurrentData] = useState([]);
-  const IsFocused = useIsFocused();
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   
   const isValidUrl = (url) =>
     typeof url === 'string' && /^https?:\/\//i.test(url);
@@ -47,15 +53,54 @@ const Products = (props) => {
   };
 
   const handleQRPress = (item) => {
-    const url = generateQRData(item);
+    setSelectedProduct(item);
+    setShowQRModal(true);
+    
+   
+    if (user?._id) {
+      dispatch(trackClick({
+        productId: item._id,
+        affiliateId: user._id,
+        clickType: 'qr_scan'
+      }));
+    }
+  };
+
+  const handleCopyLink = () => {
+    const url = generateQRData(selectedProduct);
     Clipboard.setString(url);
-    Alert.alert(
-      'URL Copied! 📋',
-      `Product link copied to clipboard:\n\n${url}`,
-      [
-        { text: 'OK', style: 'default' }
-      ]
-    );
+    Alert.alert('Success', 'Link copied to clipboard!');
+    
+   
+    if (user?._id && selectedProduct) {
+      dispatch(trackClick({
+        productId: selectedProduct._id,
+        affiliateId: user._id,
+        clickType: 'link_share'
+      }));
+    }
+  };
+
+  const handleShareLink = async () => {
+    try {
+      const url = generateQRData(selectedProduct);
+      await Share.share({
+        message: `Check out this product: ${selectedProduct?.name}\n\n${url}`,
+        url: url,
+        title: selectedProduct?.name,
+      });
+      
+     
+      if (user?._id && selectedProduct) {
+        dispatch(trackClick({
+          productId: selectedProduct._id,
+          affiliateId: user._id,
+          clickType: 'link_share'
+        }));
+      }
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
   };
 
   useEffect(() => {
@@ -180,6 +225,55 @@ const Products = (props) => {
         }}
         onEndReachedThreshold={0.05}
       />
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showQRModal}
+        onRequestClose={() => setShowQRModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setShowQRModal(false)}
+            >
+              <X size={24} color={Constants.black} />
+            </TouchableOpacity>
+
+            <Text style={styles.modalTitle}>{selectedProduct?.name}</Text>
+            
+            <View style={styles.qrCodeContainer}>
+              <QRCode
+                value={selectedProduct ? generateQRData(selectedProduct) : ''}
+                size={250}
+                color={Constants.black}
+                backgroundColor={Constants.white}
+              />
+            </View>
+
+            <Text style={styles.scanText}>Scan QR Code to view product</Text>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={handleCopyLink}
+              >
+                <Copy size={20} color={Constants.black} />
+                <Text style={styles.actionButtonText}>Copy Link</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={handleShareLink}
+              >
+                <Share2 size={20} color={Constants.black} />
+                <Text style={styles.actionButtonText}>Share</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -301,5 +395,75 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Constants.customgrey2,
     marginVertical: 10,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    backgroundColor: Constants.white,
+    borderRadius: 20,
+    padding: 30,
+    width: '90%',
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F5F5F5',
+    zIndex: 10,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontFamily: FONTS.Bold,
+    color: Constants.black,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  qrCodeContainer: {
+    backgroundColor: Constants.white,
+    padding: 20,
+    borderRadius: 15,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    marginBottom: 20,
+  },
+  scanText: {
+    fontSize: 14,
+    fontFamily: FONTS.Medium,
+    color: Constants.customgrey2,
+    marginBottom: 25,
+    textAlign: 'center',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    gap: 15,
+    width: '100%',
+  },
+  actionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Constants.custom_yellow,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  actionButtonText: {
+    fontSize: 16,
+    fontFamily: FONTS.SemiBold,
+    color: Constants.black,
   },
 });

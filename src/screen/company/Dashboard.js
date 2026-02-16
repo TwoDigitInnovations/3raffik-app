@@ -1,25 +1,55 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   Dimensions,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import {LineChart} from 'react-native-chart-kit';
 import Svg, {Circle} from 'react-native-svg';
 import {User, Bell, Store, Users, Megaphone, DollarSign} from 'lucide-react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {getCompanyDashboard} from '../../../redux/dashboard/dashboardAction';
 
 const screenWidth = Dimensions.get('window').width;
 
 const Dashboard = () => {
- 
+  const dispatch = useDispatch();
+  const {companyStats, isLoading} = useSelector(state => state.dashboard);
+  const {user} = useSelector(state => state.auth);
+
+  useEffect(() => {
+    dispatch(getCompanyDashboard());
+  }, []);
+
+  if (isLoading && !companyStats) {
+    return (
+      <View style={[styles.container, {justifyContent: 'center', alignItems: 'center'}]}>
+        <ActivityIndicator size="large" color="#FFCC00" />
+      </View>
+    );
+  }
+
+  // Default empty data if no stats
+  const stats = companyStats || {
+    totalEarnings: '0.00',
+    totalClicks: 0,
+    activeCampaigns: 0,
+    completedOrders: 0,
+    chartData: [],
+    productStats: { totalProducts: 0, topSellingCount: 0 }
+  };
+
+  // Get last 7 days data
+  const last7Days = stats.chartData?.slice(-7) || [];
+
   const chartData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    labels: last7Days.map(d => d.date) || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
-        data: [20, 45, 28, 80, 99, 43, 65],
+        data: last7Days.map(d => d.value) || [0, 0, 0, 0, 0, 0, 0],
         strokeWidth: 3,
       },
     ],
@@ -43,17 +73,15 @@ const Dashboard = () => {
     },
   };
 
- 
   const DonutChart = () => {
     const size = 140;
     const strokeWidth = 20;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     
-    
-    const totalProducts = 150;
-    const topSell = 50;
-    const total = totalProducts + topSell;
+    const totalProducts = stats.productStats?.totalProducts || 0;
+    const topSell = stats.productStats?.topSellingCount || 0;
+    const total = totalProducts + topSell || 1;
     const yellowPercentage = (totalProducts / total) * 100;
     const redPercentage = (topSell / total) * 100;
     
@@ -64,7 +92,6 @@ const Dashboard = () => {
     return (
       <View style={styles.donutContainer}>
         <Svg width={size} height={size}>
-         
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -76,7 +103,6 @@ const Dashboard = () => {
             strokeLinecap="round"
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
-      
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -91,7 +117,7 @@ const Dashboard = () => {
           />
         </Svg>
         <View style={styles.donutCenter}>
-          <Text style={styles.donutCenterValue}>150</Text>
+          <Text style={styles.donutCenterValue}>{totalProducts}</Text>
           <Text style={styles.donutCenterLabel}>Products</Text>
         </View>
       </View>
@@ -110,40 +136,40 @@ const Dashboard = () => {
           </View>
         </View>
         <View style={styles.greetingContainer}>
-          <Text style={styles.greetingText}>Hello, Harry!</Text>
+          <Text style={styles.greetingText}>Hello, {user?.name || 'Company'}!</Text>
           <Text style={styles.subGreetingText}>Good evening what are you up to?</Text>
         </View>
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, styles.earningsCard]}>
             <Store size={24} color="#EF0027" />
-            <Text style={styles.statValue}>$1,200.75</Text>
+            <Text style={styles.statValue}>${stats.totalEarnings || '0.00'}</Text>
             <Text style={styles.statLabel}>Total Earnings</Text>
           </View>
           
           <View style={[styles.statCard, styles.clicksCard]}>
             <Users size={24} color="#EF0027" />
-            <Text style={styles.statValue}>475</Text>
-            <Text style={styles.statLabel}>Clicks</Text>
+            <Text style={styles.statValue}>{stats.totalClicks || 0}</Text>
+            <Text style={styles.statLabel}>Orders</Text>
           </View>
         </View>
 
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, styles.marketingCard]}>
             <Megaphone size={24} color="#EF0027" />
-            <Text style={styles.statValue}>175</Text>
-            <Text style={styles.statLabel}>Marketing</Text>
+            <Text style={styles.statValue}>{stats.activeCampaigns || 0}</Text>
+            <Text style={styles.statLabel}>Active Campaigns</Text>
           </View>
           
           <View style={[styles.statCard, styles.revenueCard]}>
             <DollarSign size={24} color="#EF0027" />
-            <Text style={styles.statValue}>35</Text>
-            <Text style={styles.statLabel}>Revenue</Text>
+            <Text style={styles.statValue}>{stats.completedOrders || 0}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
           </View>
         </View>
         <View style={styles.chartContainer}>
           <View style={styles.chartTitleContainer}>
-            <Text style={styles.chartTitle}>Affiliate Marketing</Text>
-            <Text style={styles.chartSubtitle}>Last 30 Days</Text>
+            <Text style={styles.chartTitle}>Orders Overview</Text>
+            <Text style={styles.chartSubtitle}>Last 7 Days</Text>
           </View>
           <View style={styles.chartWrapper}>
             <LineChart

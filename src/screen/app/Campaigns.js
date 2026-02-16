@@ -13,7 +13,7 @@ import { Search } from 'lucide-react-native';
 import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import { useIsFocused } from '@react-navigation/native';
 import { useDispatch } from 'react-redux';
-import { getAllCampaigns } from '../../../redux/campaign/campaignAction';
+import { getAllCampaigns, getMyCampaigns } from '../../../redux/campaign/campaignAction';
 import Header from '../../Assets/Component/Header';
 import { navigate } from '../../../utils/navigationRef';
 
@@ -23,17 +23,19 @@ const Campaigns = () => {
   const [searchkey, setsearchkey] = useState('');
   const [page, setPage] = useState(1);
   const [curentData, setCurrentData] = useState([]);
+  const [activeTab, setActiveTab] = useState('all');
   const IsFocused = useIsFocused();
 
   useEffect(() => {
     {
       IsFocused && getCampaign(1);
     }
-  }, [IsFocused]);
+  }, [IsFocused, activeTab]);
 
   const getCampaign = (p,text) => {
     setPage(p)
-    dispatch(getAllCampaigns({p,text}))
+    const action = activeTab === 'all' ? getAllCampaigns : getMyCampaigns;
+    dispatch(action({p,text}))
       .unwrap()
       .then(data => {
         console.log('data', data);
@@ -55,13 +57,39 @@ const Campaigns = () => {
     }
   };
 
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    setCampaignList([]);
+    setsearchkey('');
+  };
+
   return (
     <View style={styles.container}>
       <View style={{marginHorizontal:20}}>
         <Header 
-          item={"All Campaigns"} 
+          item={"Campaigns"} 
           showback={true}
         />
+        
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'all' && styles.activeTab]}
+            onPress={() => handleTabChange('all')}
+          >
+            <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+              All Campaigns
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'my' && styles.activeTab]}
+            onPress={() => handleTabChange('my')}
+          >
+            <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
+              My Campaigns
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.searchContainer}>
           <View style={styles.aplcov}>
             <Search
@@ -73,6 +101,7 @@ const Campaigns = () => {
               placeholder="Search"
               placeholderTextColor={Constants.black}
               style={styles.protxtinp}
+              value={searchkey}
               onChangeText={text => {
                 getCampaign(1, text), setsearchkey(text);
               }}
@@ -115,7 +144,6 @@ const Campaigns = () => {
               />
               <View style={styles.cardOverlay} />
 
-              {/* Content Over Image */}
               <View style={styles.cardContent}>
                 <Text style={styles.campaignTitle}>{item?.name}</Text>
                 <Text style={styles.websiteUrl}>Website url - {item?.web_url}</Text>
@@ -144,6 +172,31 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 20,
     backgroundColor: Constants.white,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 10,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeTab: {
+    backgroundColor: Constants.custom_yellow,
+  },
+  tabText: {
+    fontSize: 14,
+    fontFamily: FONTS.Medium,
+    color: Constants.customgrey2,
+  },
+  activeTabText: {
+    color: Constants.black,
+    fontFamily: FONTS.SemiBold,
   },
   searchContainer: {
     flexDirection: 'row',

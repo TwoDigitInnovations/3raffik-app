@@ -57,11 +57,11 @@ const Notification = () => {
       linkedin: { IconComponent: Linkedin, color: '#0A66C2' },
     };
 
-    // Debug: Log the user data to see what we're receiving
+   
     console.log('User data in getSocialMediaIcons:', user);
     console.log('User socialMedia:', user?.socialMedia);
 
-    // Check if user has socialMedia field and it's not empty
+   
     if (user?.socialMedia && typeof user.socialMedia === 'object') {
       Object.keys(user.socialMedia).forEach((platform) => {
         console.log(`Checking platform ${platform}:`, user.socialMedia[platform]);
@@ -231,7 +231,7 @@ const Notification = () => {
                 <Text style={styles.modalEmail}>{selectedNotification?.from?.email}</Text>
                 <Text style={styles.modalPhone}>{selectedNotification?.from?.phone}</Text>
                 
-                {/* Dynamic Social Media Icons */}
+               
                 <View style={styles.socialContainer}>
                   {getSocialMediaIcons(selectedNotification?.from).length > 0 ? (
                     getSocialMediaIcons(selectedNotification?.from)

@@ -1,6 +1,6 @@
-const prodUrl = 'http://192.168.1.14:8001/';
+const prodUrl = 'http://192.168.1.4:8001/';
 //  const prodUrl = 'http://10.112.185.202:8001/';
-// const prodUrl = 'https://api.bokakorning.online/';
+// const prodUrl = 'https://3raffik.2digitinnovations.com/';
 // const prodUrl = 'http://10.80.19.103:3000/';
 
 let apiUrl = prodUrl;

@@ -42,3 +42,15 @@ export const updateNotificationStatus = createAsyncThunk(
     }
   },
 );
+
+export const checkCampaignConnection = createAsyncThunk(
+  'notification/checkConnection',
+  async (campaign_id, thunkAPI) => {
+    try {
+      const {data} = await axios.get(`notification/checkConnection/${campaign_id}`);
+      return data;
+    } catch (error) {
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+);

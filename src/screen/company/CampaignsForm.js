@@ -18,7 +18,6 @@ const CampaignsForm = (props) => {
   const [campaignModel, setCampaignModel] = useState({
     name: '',
     description: '',
-    web_url: '',
     photo: '',
     status:'Active'
   });
@@ -43,14 +42,13 @@ const CampaignsForm = (props) => {
       });
   };
   const submit = async () => {
-    if (!campaignModel.name||!campaignModel.description||!campaignModel.web_url||(!campaignModel.photo||!campaignModel.photo.uri)) {
+    if (!campaignModel.name||!campaignModel.description||(!campaignModel.photo||!campaignModel.photo.uri)) {
       setSubmitted(true)
       return
     }
     const formData = new FormData();
     formData.append('name', campaignModel.name);
     formData.append('description', campaignModel.description);
-    formData.append('web_url', campaignModel.web_url);
     formData.append('status', campaignModel?.status);
     if (campaignModel?.photo?.uri) {
       formData.append('photo', campaignModel.photo); 
@@ -65,7 +63,6 @@ const CampaignsForm = (props) => {
         setCampaignModel({
           name: '',
     description: '',
-    web_url: '',
     photo: '',
     status:'Active'
         });
@@ -122,20 +119,6 @@ const CampaignsForm = (props) => {
         </View>
         {submitted && !campaignModel?.description && (
             <Text style={styles.require}>Description is required</Text>
-          )}
-    <Text style={styles.inptxt}>Website Url</Text>
-        <View style={styles.inpcov}>
-          <TextInput
-            style={styles.inputfield}
-            placeholder="Enter website url"
-            textAlign='left'
-            placeholderTextColor={Constants.customgrey2}
-             value={campaignModel?.web_url}
-            onChangeText={web_url => setCampaignModel({...campaignModel, web_url})}
-          />
-        </View>
-        {submitted && !campaignModel?.web_url && (
-            <Text style={styles.require}>Website Url is required</Text>
           )}
         <Text style={styles.inptxt}>Status</Text>
         <TouchableOpacity 

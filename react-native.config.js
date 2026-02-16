@@ -1,7 +1,7 @@
 module.exports = {
   project: {
     ios: {},
-    android: {}, // grouped into "project"
+    android: {}, 
   },
-  assets: ['./src/Assets/fonts/'], // stays the same
+  assets: ['./src/Assets/fonts/'], 
 };

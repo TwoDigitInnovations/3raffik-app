@@ -1,29 +1,81 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   StyleSheet,
   Text,
   View,
   ScrollView,
   Dimensions,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import {LineChart} from 'react-native-chart-kit';
 import Svg, {Circle} from 'react-native-svg';
 import {User, Bell, Store, Users, Megaphone, DollarSign} from 'lucide-react-native';
+import {useDispatch, useSelector} from 'react-redux';
+import {getAffiliateDashboard} from '../../../redux/dashboard/dashboardAction';
 
 const screenWidth = Dimensions.get('window').width;
 
 const Dashboard = () => {
- 
+  const dispatch = useDispatch();
+  const {affiliateStats, isLoading} = useSelector(state => state.dashboard);
+  const {user} = useSelector(state => state.auth);
+
+  useEffect(() => {
+    dispatch(getAffiliateDashboard());
+  }, []);
+
+  if (isLoading && !affiliateStats) {
+    return (
+      <View style={[styles.container, {justifyContent: 'center', alignItems: 'center'}]}>
+        <ActivityIndicator size="large" color="#FFCC00" />
+      </View>
+    );
+  }
+
+  // Default empty data if no stats
+  const stats = affiliateStats || {
+    totalEarnings: '0.00',
+    totalClicks: 0,
+    conversions: 0,
+    totalRevenue: '0.00',
+    chartData: [],
+    topCampaigns: []
+  };
+
+  // Debug: Log the data
+  console.log('Affiliate Stats:', stats);
+  console.log('Chart Data:', stats.chartData);
+
+  // Get last 7 days data (reverse to get most recent)
+  const last7Days = stats.chartData?.slice(-7) || [];
+
   const chartData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+    labels: last7Days.map(d => d.date) || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [
       {
-        data: [20, 45, 28, 80, 99, 43, 65],
+        data: last7Days.map(d => d.clicks) || [0, 0, 0, 0, 0, 0, 0],
         strokeWidth: 3,
+        color: (opacity = 1) => `rgba(239, 0, 39, ${opacity})`,
       },
     ],
+    legend: ['Clicks']
   };
+
+  const conversionChartData = {
+    labels: last7Days.map(d => d.date) || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+    datasets: [
+      {
+        data: last7Days.map(d => d.conversions) || [0, 0, 0, 0, 0, 0, 0],
+        strokeWidth: 4,
+        color: (opacity = 1) => `rgba(255, 140, 0, ${opacity})`, // Dark orange
+      },
+    ],
+    legend: ['Conversions']
+  };
+
+  console.log('Last 7 Days:', last7Days);
+  console.log('Clicks Data:', chartData.datasets[0].data);
+  console.log('Conversions Data:', conversionChartData.datasets[0].data);
 
   const chartConfig = {
     backgroundColor: '#FFCC0024',
@@ -36,26 +88,49 @@ const Dashboard = () => {
       borderRadius: 16,
     },
     propsForDots: {
-      r: '0',
+      r: '4',
     },
     propsForBackgroundLines: {
-      strokeWidth: 0,
+      strokeWidth: 1,
+      strokeDasharray: '5,5',
     },
+    useShadowColorFromDataset: true,
   };
 
- 
+  const conversionChartConfig = {
+    backgroundColor: '#FFF',
+    backgroundGradientFrom: '#FFF',
+    backgroundGradientTo: '#FFF',
+    decimalPlaces: 0,
+    color: (opacity = 1) => `rgba(255, 165, 0, ${opacity})`, // Orange color for better visibility
+    labelColor: (opacity = 1) => `rgba(102, 102, 102, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
+    propsForDots: {
+      r: '6',
+      strokeWidth: 2,
+      stroke: '#FF8C00',
+    },
+    propsForBackgroundLines: {
+      strokeWidth: 1,
+      strokeDasharray: '5,5',
+    },
+    strokeWidth: 4, // Thicker line
+    useShadowColorFromDataset: true,
+  };
+
   const DonutChart = () => {
     const size = 140;
     const strokeWidth = 20;
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     
-    
-    const totalProducts = 150;
-    const topSell = 50;
-    const total = totalProducts + topSell;
-    const yellowPercentage = (totalProducts / total) * 100;
-    const redPercentage = (topSell / total) * 100;
+    const campaign1 = stats.topCampaigns?.[0]?.totalOrders || 0;
+    const campaign2 = stats.topCampaigns?.[1]?.totalOrders || 0;
+    const total = campaign1 + campaign2 || 1;
+    const yellowPercentage = (campaign1 / total) * 100;
+    const redPercentage = (campaign2 / total) * 100;
     
     const yellowStrokeDasharray = `${(yellowPercentage / 100) * circumference} ${circumference}`;
     const redStrokeDasharray = `${(redPercentage / 100) * circumference} ${circumference}`;
@@ -64,7 +139,6 @@ const Dashboard = () => {
     return (
       <View style={styles.donutContainer}>
         <Svg width={size} height={size}>
-         
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -76,7 +150,6 @@ const Dashboard = () => {
             strokeLinecap="round"
             transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
-      
           <Circle
             cx={size / 2}
             cy={size / 2}
@@ -91,8 +164,8 @@ const Dashboard = () => {
           />
         </Svg>
         <View style={styles.donutCenter}>
-          <Text style={styles.donutCenterValue}>150</Text>
-          <Text style={styles.donutCenterLabel}>Products</Text>
+          <Text style={styles.donutCenterValue}>{total}</Text>
+          <Text style={styles.donutCenterLabel}>Orders</Text>
         </View>
       </View>
     );
@@ -110,19 +183,19 @@ const Dashboard = () => {
           </View>
         </View>
         <View style={styles.greetingContainer}>
-          <Text style={styles.greetingText}>Hello, Harry!</Text>
+          <Text style={styles.greetingText}>Hello, {user?.name || 'Affiliate'}!</Text>
           <Text style={styles.subGreetingText}>Good evening what are you up to?</Text>
         </View>
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, styles.earningsCard]}>
             <Store size={24} color="#EF0027" />
-            <Text style={styles.statValue}>$1,200.75</Text>
+            <Text style={styles.statValue}>${stats.totalEarnings || '0.00'}</Text>
             <Text style={styles.statLabel}>Total Earnings</Text>
           </View>
           
           <View style={[styles.statCard, styles.clicksCard]}>
             <Users size={24} color="#EF0027" />
-            <Text style={styles.statValue}>475</Text>
+            <Text style={styles.statValue}>{stats.totalClicks || 0}</Text>
             <Text style={styles.statLabel}>Clicks</Text>
           </View>
         </View>
@@ -130,34 +203,63 @@ const Dashboard = () => {
         <View style={styles.statsContainer}>
           <View style={[styles.statCard, styles.marketingCard]}>
             <Megaphone size={24} color="#EF0027" />
-            <Text style={styles.statValue}>175</Text>
+            <Text style={styles.statValue}>{stats.conversions || 0}</Text>
             <Text style={styles.statLabel}>Conversion</Text>
           </View>
           
           <View style={[styles.statCard, styles.revenueCard]}>
             <DollarSign size={24} color="#EF0027" />
-            <Text style={styles.statValue}>35</Text>
+            <Text style={styles.statValue}>${stats.totalRevenue || '0.00'}</Text>
             <Text style={styles.statLabel}>Revenue</Text>
           </View>
         </View>
         <View style={styles.chartContainer}>
           <View style={styles.chartTitleContainer}>
             <Text style={styles.chartTitle}>Clicks vs Conversions</Text>
-            <Text style={styles.chartSubtitle}>Last 30 Days</Text>
+            <Text style={styles.chartSubtitle}>Last 7 Days</Text>
           </View>
+          
+        
           <View style={styles.chartWrapper}>
+            <Text style={{fontSize: 12, color: '#EF0027', fontWeight: 'bold', marginBottom: 5, marginLeft: 10}}>
+              Clicks 
+            </Text>
             <LineChart
               data={chartData}
               width={screenWidth - 80}
-              height={160}
+              height={120}
               chartConfig={chartConfig}
               bezier
               style={{
                 borderRadius: 16,
+                marginBottom: 10,
               }}
-              withHorizontalLabels={false}
+              withHorizontalLabels={true}
               withVerticalLabels={false}
-              withDots={false}
+              withDots={true}
+              withShadow={false}
+              withScrollableDot={false}
+            />
+          </View>
+
+          {/* Conversions Chart */}
+          <View style={styles.chartWrapper}>
+            <Text style={{fontSize: 12, color: '#FF8C00', fontWeight: 'bold', marginBottom: 5, marginLeft: 10}}>
+              Conversions 
+            </Text>
+            <LineChart
+              data={conversionChartData}
+              width={screenWidth - 80}
+              height={120}
+              chartConfig={conversionChartConfig}
+              bezier
+              style={{
+                borderRadius: 16,
+                backgroundColor: '#FFF',
+              }}
+              withHorizontalLabels={true}
+              withVerticalLabels={false}
+              withDots={true}
               withShadow={false}
               withScrollableDot={false}
             />
@@ -172,11 +274,15 @@ const Dashboard = () => {
             <View style={styles.legendRightContainer}>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, {backgroundColor: '#FFCC00'}]} />
-                <Text style={styles.legendText}>Campaign A</Text>
+                <Text style={styles.legendText}>
+                  {stats.topCampaigns?.[0]?.campaignDetails?.[0]?.name || 'Campaign A'}
+                </Text>
               </View>
               <View style={styles.legendItem}>
                 <View style={[styles.legendDot, {backgroundColor: '#EF0027'}]} />
-                <Text style={styles.legendText}>Campaign B</Text>
+                <Text style={styles.legendText}>
+                  {stats.topCampaigns?.[1]?.campaignDetails?.[0]?.name || 'Campaign B'}
+                </Text>
               </View>
             </View>
           </View>

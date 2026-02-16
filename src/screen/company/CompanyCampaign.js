@@ -74,18 +74,18 @@ const CompanyCampaign = () => {
   const toggleFilter = (value, type) => {
   if (type === 'status') {
     if (selectedStatus === value) {
-      setSelectedStatus(null);           // unselect if already selected
+      setSelectedStatus(null);          
       getCampaign(1,searchkey,null,selectedVerification)
     } else {
       getCampaign(1,searchkey,value,selectedVerification)
-      setSelectedStatus(value);          // select new value
+      setSelectedStatus(value);         
     }
   }
   
   if (type === 'verify') {
     if (selectedVerification === value) {
       getCampaign(1,searchkey,selectedStatus,null)
-      setSelectedVerification(null);     // unselect if already selected
+      setSelectedVerification(null);     
     } else {
       getCampaign(1,searchkey,selectedStatus,value)
       setSelectedVerification(value);   
@@ -247,7 +247,7 @@ const CompanyCampaign = () => {
               />
               <View style={styles.cardOverlay} />
               
-              {/* Status Badge - Top Right */}
+            
               <View style={styles.statusBadgeContainer}>
                 <Text style={[styles.statusBadge, {
                   backgroundColor: item?.status === 'Active' ? '#4CAF50' : '#FF9800'
@@ -256,14 +256,12 @@ const CompanyCampaign = () => {
                 </Text>
               </View>
 
-              {/* Content Over Image */}
               <View style={styles.cardContent}>
                 <Text style={styles.campaignTitle}>{item?.name}</Text>
                 <Text style={styles.websiteUrl}>Website url - {item?.web_url}</Text>
                 
-                {/* Bottom Row */}
                 <View style={styles.cardBottomRow}>
-                  {/* Verification Status */}
+                
                   <Text style={[styles.verificationBadge, {
                     backgroundColor: item?.verified_status === 'Verified' ? '#4CAF50' : 
                                    item?.verified_status === 'Rejected' ? '#F44336' : '#EAAA00'
@@ -271,7 +269,7 @@ const CompanyCampaign = () => {
                     {item?.verified_status}
                   </Text>
                   
-                  {/* Action Buttons */}
+                
                   <View style={styles.actionButtons}>
                     <TouchableOpacity style={styles.actionBtn} onPress={()=>navigate('CampaignsForm',item?._id)}>
                       <Pencil size={18} color={Constants.white} />

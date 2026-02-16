@@ -1,4 +1,4 @@
-import { Animated, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { Animated, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View, Alert } from 'react-native'
 import React, { useEffect, useRef, useState } from 'react'
 import styles from './styles';
 import * as Yup from 'yup';
@@ -7,36 +7,94 @@ import Constants from '../../Assets/Helpers/constant';
 import { signup } from '../../../redux/auth/authAction';
 import { useDispatch } from 'react-redux';
 import { navigate } from '../../../utils/navigationRef';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 const SignUp = () => {
   const [showPass, setShowPass] = useState(true);
+  const [documentFile, setDocumentFile] = useState(null);
   const dispatch = useDispatch();
-    const validationSchema = Yup.object().shape({
-      name: Yup.string().required('Name is required'),
-      email: Yup.string().email('Invalid email').required('Email is required'),
-      password: Yup.string().min(8, 'Password must be at least 8 characters').required('Password is required'),
-      conformpassword: Yup.string()
-            .oneOf([Yup.ref('password')], 'Passwords must match')
-            .required('Confirm Password is required'),
+  
+  const validationSchema = Yup.object().shape({
+    name: Yup.string().required('Name is required'),
+    email: Yup.string().email('Invalid email').required('Email is required'),
+    password: Yup.string().min(8, 'Password must be at least 8 characters').required('Password is required'),
+    conformpassword: Yup.string()
+      .oneOf([Yup.ref('password')], 'Passwords must match')
+      .required('Confirm Password is required'),
+  });
+
+  const formik = useFormik({
+    initialValues: {
+      name: '',
+      email: '',
+      password: '',
+      conformpassword: '',
+    },
+    validationSchema: validationSchema,
+    onSubmit: (values, assets) => {
+      submit(values, assets)
+    },
+  });
+
+  const handleDocumentPicker = () => {
+    const options = {
+      mediaType: 'photo',
+      quality: 0.8,
+    };
+
+    launchImageLibrary(options, (response) => {
+      if (response.didCancel) {
+        console.log('User cancelled image picker');
+      } else if (response.error) {
+        Alert.alert('Error', 'Failed to pick document');
+      } else if (response.assets && response.assets[0]) {
+        setDocumentFile(response.assets[0]);
+      }
     });
-  
-    const formik = useFormik({
-      initialValues: {
-        name: '',
-        name: '',
-        email: '',
-        password: '',
-        conformpassword:'',
-      },
-      validationSchema: validationSchema,
-      onSubmit: (values, assets) => {
-        submit(values, assets)
-      },
-    });
-  
-   const submit = async (value, { resetForm }) => {
-  
-      dispatch(signup({ ...value, role: tabopt === 1 ? 'company' : 'user' }))
+  };
+
+  const submit = async (value, { resetForm }) => {
+    if (tabopt === 1 && !documentFile) {
+      Alert.alert('Required', 'Please upload document verification for company registration');
+      return;
+    }
+
+    if (documentFile) {
+      // Create FormData for file upload (same as AddProduct.js)
+      const formData = new FormData();
+      formData.append('name', value.name);
+      formData.append('email', value.email);
+      formData.append('password', value.password);
+      formData.append('role', tabopt === 1 ? 'company' : 'user');
+      
+      // Add image file (same format as AddProduct.js)
+      formData.append('documentVerification', {
+        uri: documentFile.uri,
+        type: documentFile.type,
+        name: documentFile.fileName || 'document.jpg'
+      });
+      
+      dispatch(signup(formData))
+        .unwrap()
+        .then(data => {
+          console.log('data', data);
+          resetForm();
+          setDocumentFile(null);
+          navigate('SignIn');
+        })
+        .catch(error => {
+          console.error('Signup failed:', error);
+        });
+    } else {
+      // Regular JSON payload
+      const payload = {
+        name: value.name,
+        email: value.email,
+        password: value.password,
+        role: tabopt === 1 ? 'company' : 'user',
+      };
+
+      dispatch(signup(payload))
         .unwrap()
         .then(data => {
           console.log('data', data);
@@ -44,10 +102,12 @@ const SignUp = () => {
           navigate('SignIn');
         })
         .catch(error => {
-          console.error('Signin failed:', error);
+          console.error('Signup failed:', error);
         });
-    };
-    const [tabopt, settabopt] = useState(0);
+    }
+  };
+
+  const [tabopt, settabopt] = useState(0);
   const toggleAnim = useRef(new Animated.Value(tabopt)).current;
   useEffect(() => {
     Animated.timing(toggleAnim, {
@@ -212,6 +272,30 @@ const SignUp = () => {
             {formik.touched.conformpassword && formik.errors.conformpassword &&
               <Text style={styles.require}>{formik.errors.conformpassword}</Text>
             }
+
+            {tabopt === 1 && (
+              <>
+                <Text style={styles.inptxt}>Document Verification</Text>
+                <TouchableOpacity 
+                  style={[styles.inpcov, { justifyContent: 'center', paddingVertical: 15 }]}
+                  onPress={handleDocumentPicker}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ 
+                    flex: 1,
+                    paddingHorizontal: 15,
+                    color: documentFile ? Constants.black : Constants.customgrey2,
+                    fontFamily: Constants.FONTS?.Medium || 'System',
+                    fontSize: 16,
+                  }}>
+                    {documentFile ? (documentFile.fileName || documentFile.name || 'Document Selected') : 'Upload Document (Required for Company)'}
+                  </Text>
+                </TouchableOpacity>
+                {documentFile && (
+                  <Text style={[styles.require, { color: 'green', marginTop: 5 }]}>✓ {documentFile.fileName || 'Document uploaded'}</Text>
+                )}
+              </>
+            )}
     
             <TouchableOpacity style={styles.btncov} onPress={formik.handleSubmit}>
               <Text style={styles.btntxt}>Create Account</Text>

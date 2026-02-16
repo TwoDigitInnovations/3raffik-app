@@ -5,27 +5,34 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
-import React, { useEffect, useState} from 'react';
-import Constants, { FONTS} from '../../Assets/Helpers/constant';
+import React, { useEffect, useState } from 'react';
+import { useIsFocused } from '@react-navigation/native';
+import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import Header from '../../Assets/Component/Header';
 import { ArrowRight } from 'lucide-react-native';
 import { useDispatch } from 'react-redux';
 import { getProductCount } from '../../../redux/product/productAction';
-import { sendConnectionRequest } from '../../../redux/notification/notificationAction';
+import { sendConnectionRequest, checkCampaignConnection } from '../../../redux/notification/notificationAction';
 import { navigate } from '../../../utils/navigationRef';
 
 const CampaignDetail = (props) => {
   const campaignData = props?.route?.params;
   const dispatch = useDispatch();
+  const isFocused = useIsFocused();
   const [imageError, setImageError] = useState(false);
   const [productCount, setProductCount] = useState(0);
+  const [connectionStatus, setConnectionStatus] = useState('not_requested');
+  const [isConnected, setIsConnected] = useState(false);
   
   const isValidUrl = (url) =>
     typeof url === 'string' && /^https?:\/\//i.test(url);
 
   useEffect(() => {
-    if (campaignData?._id) {
+    if (campaignData?._id && isFocused) {
+      checkConnection();
+      
       dispatch(getProductCount(campaignData._id))
         .unwrap()
         .then(data => {
@@ -35,18 +42,62 @@ const CampaignDetail = (props) => {
           console.error('Get Product Count failed:', error);
         });
     }
-  }, [campaignData]);
+  }, [campaignData?._id, isFocused]);
 
-  const handleConnectionRequest = () => {
-    if (campaignData?.created_by?._id) {
-      dispatch(sendConnectionRequest({ company_id: campaignData.created_by._id }))
+  const checkConnection = () => {
+    if (campaignData?._id) {
+      dispatch(checkCampaignConnection(campaignData._id))
         .unwrap()
-        .then(() => {
-          console.log('Connection request sent successfully');
+        .then(data => {
+          console.log('Connection status:', data);
+          setIsConnected(data.connected);
+          setConnectionStatus(data.status);
         })
         .catch(error => {
-          console.error('Send connection request failed:', error);
+          console.error('Check connection failed:', error);
+          setConnectionStatus('not_requested');
+          setIsConnected(false);
         });
+    }
+  };
+
+  const handleConnectionRequest = () => {
+    if (campaignData?._id) {
+      dispatch(sendConnectionRequest({ campaign_id: campaignData._id }))
+        .unwrap()
+        .then(() => {
+          Alert.alert('Success', 'Connection request sent successfully');
+          setConnectionStatus('pending');
+          checkConnection();
+        })
+        .catch(error => {
+          Alert.alert('Error', error.message || 'Failed to send connection request');
+        });
+    }
+  };
+
+  const handleProductsClick = () => {
+    if (!isConnected) {
+      Alert.alert(
+        'Access Denied',
+        'You need to send a connection request and wait for the company to accept it before viewing products.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
+    navigate('Products', { campaign_id: campaignData?._id });
+  };
+
+  const getConnectionButtonText = () => {
+    switch (connectionStatus) {
+      case 'pending':
+        return 'Request Pending';
+      case 'accepted':
+        return 'Connected';
+      case 'rejected':
+        return 'Request Rejected';
+      default:
+        return 'Connect Request';
     }
   };
 
@@ -55,7 +106,6 @@ const CampaignDetail = (props) => {
       <Header item={"Campaigns Detail"} showback={true}/>
       <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
         
-        {/* Campaign Image */}
         <Image 
           source={
             !imageError && isValidUrl(campaignData?.photo)
@@ -68,18 +118,14 @@ const CampaignDetail = (props) => {
         />
 
         <View style={styles.contentContainer}>
-          {/* Campaign Name */}
           <Text style={styles.campaignName}>{campaignData?.name || 'Beauty Product'}</Text>
           
-          {/* Website URL */}
           <Text style={styles.websiteLabel}>Website url - 
             <Text style={styles.websiteUrl}> {campaignData?.web_url || 'https://abcss'}</Text>
           </Text>
           
-          {/* Verification Status */}
           <Text style={styles.verificationLabel}>Verification Status</Text>
           
-          {/* Description */}
           <Text style={styles.descriptionLabel}>Description</Text>
           <Text style={styles.descriptionText}>
             {campaignData?.description || 
@@ -88,18 +134,21 @@ const CampaignDetail = (props) => {
         </View>
       </ScrollView>
 
-      {/* Bottom Buttons */}
       <View style={styles.bottomButtonsContainer}>
         <TouchableOpacity 
-          style={styles.connectButton}
+          style={[
+            styles.connectButton,
+            (connectionStatus === 'pending' || connectionStatus === 'accepted') && styles.disabledButton
+          ]}
           onPress={handleConnectionRequest}
+          disabled={connectionStatus === 'pending' || connectionStatus === 'accepted'}
         >
-          <Text style={styles.buttonText}>Connect Request</Text>
+          <Text style={styles.buttonText}>{getConnectionButtonText()}</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.productsButton}
-          onPress={() => navigate('Products', { campaign_id: campaignData?._id })}
+          onPress={handleProductsClick}
         >
           <Text style={styles.buttonText}>Total Products {productCount}</Text>
           <ArrowRight size={20} color={Constants.black} />
@@ -175,6 +224,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#E0E0E0',
+    opacity: 0.6,
   },
   productsButton: {
     backgroundColor: '#FFCC00',

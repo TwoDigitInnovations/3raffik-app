@@ -14,36 +14,53 @@ import { ArrowUpRight, ArrowLeft, DollarSign } from 'lucide-react-native';
 import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import Header from '../../Assets/Component/Header';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAffiliateCommissions, requestWithdrawal } from '../../../redux/wallet/walletAction';
+import { getAffiliateWallet, requestWithdrawal, getWithdrawalHistory } from '../../../redux/wallet/walletAction';
 
 const Wallet = () => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const walletState = useSelector(state => state.wallet);
-  const { commissions = [], totalCommission = 0, isLoading = false } = walletState || {};
+  const { commissions = [], availableBalance = 0, withdrawals = [], isLoading = false } = walletState || {};
   
   const [rechargeModalVisible, setRechargeModalVisible] = useState(false);
   const [amount, setAmount] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState('commission');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (user) {
-      dispatch(getAffiliateCommissions({ page: 1 }));
+      dispatch(getAffiliateWallet());
+      dispatch(getWithdrawalHistory());
     }
   }, [user, dispatch]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    dispatch(getAffiliateCommissions({ page: 1 }));
+    await dispatch(getAffiliateWallet());
+    await dispatch(getWithdrawalHistory());
     setRefreshing(false);
   };
 
   const handleWithdraw = () => {
-    const currentBalance = totalCommission || 0;
-    if (amount && parseFloat(amount) > 0 && parseFloat(amount) <= currentBalance) {
-      dispatch(requestWithdrawal({ amount: parseFloat(amount) }));
-      setRechargeModalVisible(false);
-      setAmount('');
+    if (isSubmitting) return;
+    
+    if (amount && parseFloat(amount) > 0 && parseFloat(amount) <= availableBalance) {
+      setIsSubmitting(true);
+      dispatch(requestWithdrawal({ amount: parseFloat(amount) }))
+        .unwrap()
+        .then(() => {
+          dispatch(getAffiliateWallet());
+          dispatch(getWithdrawalHistory());
+          setRechargeModalVisible(false);
+          setAmount('');
+        })
+        .catch((error) => {
+          console.error('Withdrawal error:', error);
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
     } else {
       alert('Please enter a valid amount');
     }
@@ -57,11 +74,21 @@ const Wallet = () => {
     });
   };
 
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'completed': return '#4CAF50';
+      case 'approved': return '#2196F3';
+      case 'pending': return '#FF9800';
+      case 'rejected': return '#F44336';
+      default: return Constants.customgrey2;
+    }
+  };
+
   const renderCommissionItem = ({ item }) => (
     <View style={styles.transactionItem}>
       <View style={styles.transactionInfo}>
         <Text style={styles.transactionTitle}>
-          Commission from {item.product?.name || 'Product'}
+          {item.product?.name || 'Product'}
         </Text>
         <Text style={styles.transactionSubtitle}>
           Campaign: {item.campaign?.name || 'N/A'}
@@ -73,6 +100,23 @@ const Wallet = () => {
       <View style={styles.transactionAmount}>
         <Text style={styles.amountText}>${item.commissionAmount}</Text>
         <ArrowUpRight size={16} color={Constants.black} />
+      </View>
+    </View>
+  );
+
+  const renderWithdrawalItem = ({ item }) => (
+    <View style={styles.transactionItem}>
+      <View style={styles.transactionInfo}>
+        <Text style={styles.transactionTitle}>Withdrawal Request</Text>
+        <Text style={[styles.transactionSubtitle, { color: getStatusColor(item.status) }]}>
+          Status: {item.status.toUpperCase()}
+        </Text>
+        <Text style={styles.transactionDate}>
+          {formatDate(item.createdAt)}
+        </Text>
+      </View>
+      <View style={styles.transactionAmount}>
+        <Text style={styles.amountText}>-${item.amount}</Text>
       </View>
     </View>
   );
@@ -90,10 +134,9 @@ const Wallet = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
 
-        {/* Total Amount Section */}
         <View style={styles.totalAmountSection}>
           <View style={styles.amountHeader}>
-            <Text style={styles.totalAmountLabel}>Total Commission Earned</Text>
+            <Text style={styles.totalAmountLabel}>Available Balance</Text>
             <TouchableOpacity 
               style={styles.rechargeButton}
               onPress={() => setRechargeModalVisible(true)}
@@ -101,36 +144,69 @@ const Wallet = () => {
               <Text style={styles.rechargeButtonText}>Withdraw</Text>
             </TouchableOpacity>
           </View>
-          <Text style={styles.totalAmountValue}>${totalCommission || 0}</Text>
+          <Text style={styles.totalAmountValue}>${availableBalance || 0}</Text>
         </View>
 
-        {/* Commission History Section */}
+        <View style={styles.tabContainer}>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'commission' && styles.activeTab]}
+            onPress={() => setActiveTab('commission')}
+          >
+            <Text style={[styles.tabText, activeTab === 'commission' && styles.activeTabText]}>
+              Commission History
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.tab, activeTab === 'transaction' && styles.activeTab]}
+            onPress={() => setActiveTab('transaction')}
+          >
+            <Text style={[styles.tabText, activeTab === 'transaction' && styles.activeTabText]}>
+              Transaction History
+            </Text>
+          </TouchableOpacity>
+        </View>
+
         <View style={styles.transactionSection}>
-          <Text style={styles.sectionTitle}>Commission History</Text>
-          
           {isLoading ? (
             <View style={styles.loadingContainer}>
-              <Text style={styles.loadingText}>Loading commissions...</Text>
+              <Text style={styles.loadingText}>Loading...</Text>
             </View>
-          ) : (commissions && commissions.length > 0) ? (
-            <FlatList
-              data={commissions}
-              renderItem={renderCommissionItem}
-              keyExtractor={(item) => item._id}
-              scrollEnabled={false}
-            />
+          ) : activeTab === 'commission' ? (
+            commissions && commissions.length > 0 ? (
+              <FlatList
+                data={commissions}
+                renderItem={renderCommissionItem}
+                keyExtractor={(item) => item._id}
+                scrollEnabled={false}
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No commissions yet</Text>
+                <Text style={styles.emptySubText}>
+                  Share your QR codes to start earning!
+                </Text>
+              </View>
+            )
           ) : (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No commissions yet</Text>
-              <Text style={styles.emptySubText}>
-                Share your QR codes to start earning commissions!
-              </Text>
-            </View>
+            withdrawals && withdrawals.length > 0 ? (
+              <FlatList
+                data={withdrawals}
+                renderItem={renderWithdrawalItem}
+                keyExtractor={(item) => item._id}
+                scrollEnabled={false}
+              />
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No transactions yet</Text>
+                <Text style={styles.emptySubText}>
+                  Your withdrawal history will appear here
+                </Text>
+              </View>
+            )
           )}
         </View>
       </ScrollView>
 
-      {/* Withdraw Modal */}
       <Modal
         animationType="fade"
         transparent={true}
@@ -139,7 +215,6 @@ const Wallet = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-         
             <View style={styles.modalHeader}>
               <TouchableOpacity 
                 style={styles.backButton}
@@ -147,7 +222,6 @@ const Wallet = () => {
                   setRechargeModalVisible(false);
                   setAmount('');
                 }}
-                activeOpacity={0.7}
               >
                 <ArrowLeft size={20} color={Constants.black} />
               </TouchableOpacity>
@@ -157,12 +231,10 @@ const Wallet = () => {
               </View>
             </View>
 
-            {/* Available Balance */}
             <Text style={styles.availableBalanceText}>
-              Available Balance ${totalCommission || 0}
+              Available Balance ${availableBalance || 0}
             </Text>
 
-            {/* Amount Input */}
             <View style={styles.amountInputContainer}>
               <Text style={styles.dollarSymbol}>$</Text>
               <TextInput
@@ -175,12 +247,14 @@ const Wallet = () => {
               />
             </View>
 
-          
             <TouchableOpacity 
-              style={styles.proceedButton}
+              style={[styles.proceedButton, isSubmitting && styles.disabledButton]}
               onPress={handleWithdraw}
+              disabled={isSubmitting}
             >
-              <Text style={styles.proceedButtonText}>Proceed to Withdraw</Text>
+              <Text style={styles.proceedButtonText}>
+                {isSubmitting ? 'Processing...' : 'Proceed to Withdraw'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -249,6 +323,31 @@ const styles = StyleSheet.create({
   totalAmountValue: {
     fontSize: 32,
     fontFamily: FONTS.Bold,
+    color: Constants.black,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 20,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 25,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  activeTab: {
+    backgroundColor: '#FFCC00',
+  },
+  tabText: {
+    fontSize: 14,
+    fontFamily: FONTS.Medium,
+    color: Constants.customgrey2,
+  },
+  activeTabText: {
     color: Constants.black,
   },
   transactionSection: {
@@ -416,6 +515,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingVertical: 12,
     alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#E0E0E0',
+    opacity: 0.6,
   },
   proceedButtonText: {
     fontSize: 16,

@@ -51,6 +51,24 @@ export const getAllCampaigns = createAsyncThunk(
     }
   },
 );
+
+export const getMyCampaigns = createAsyncThunk(
+  'campaign/getMyCampaigns',
+  async (params, thunkAPI) => {
+    try {
+      let url =`campaign/getMyCampaigns?page=${params?.p}`
+      if (params?.text) {
+        url +=`&key=${params.text}`
+      } 
+
+      const {data} = await axios.get(url);
+      return data;
+    } catch (error) {
+      showToaster('error',error);
+      return thunkAPI.rejectWithValue(error);
+    }
+  },
+);
 export const getCampaignbyId = createAsyncThunk(
   'campaign/getCampaignbyId',
   async (params, thunkAPI) => {

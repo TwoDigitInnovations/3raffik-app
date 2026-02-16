@@ -8,9 +8,11 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Modal,
+  Share,
 } from 'react-native';
 import React, { useEffect, useState } from 'react';
-import { Search } from 'lucide-react-native';
+import { Search, X, Copy, Share2 } from 'lucide-react-native';
 import Constants, { FONTS } from '../../Assets/Helpers/constant';
 import { hp, wp } from '../../../utils/responsiveScreen';
 import { useIsFocused } from '@react-navigation/native';
@@ -28,6 +30,8 @@ const MyProducts = (props) => {
   const [imageError, setImageError] = useState(false);
   const [searchkey, setsearchkey] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const IsFocused = useIsFocused();
   
   const isValidUrl = (url) =>
@@ -45,15 +49,27 @@ const MyProducts = (props) => {
   };
 
   const handleQRPress = (item) => {
-    const url = generateQRData(item);
+    setSelectedProduct(item);
+    setShowQRModal(true);
+  };
+
+  const handleCopyLink = () => {
+    const url = generateQRData(selectedProduct);
     Clipboard.setString(url);
-    Alert.alert(
-      'URL Copied! 📋',
-      `Product link copied to clipboard:\n\n${url}`,
-      [
-        { text: 'OK', style: 'default' }
-      ]
-    );
+    Alert.alert('Success', 'Link copied to clipboard!');
+  };
+
+  const handleShareLink = async () => {
+    try {
+      const url = generateQRData(selectedProduct);
+      await Share.share({
+        message: `Check out this product: ${selectedProduct?.name}\n\n${url}`,
+        url: url,
+        title: selectedProduct?.name,
+      });
+    } catch (error) {
+      console.error('Share failed:', error);
+    }
   };
 
   useEffect(() => {
@@ -172,6 +188,54 @@ const MyProducts = (props) => {
           </TouchableOpacity>
         )}
       />
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={showQRModal}
+        onRequestClose={() => setShowQRModal(false)}>
+        <View style={styles.qrModalOverlay}>
+          <View style={styles.qrModalContent}>
+            <View style={styles.qrModalHeader}>
+              <Text style={styles.qrModalTitle}>Product QR Code</Text>
+              <TouchableOpacity onPress={() => setShowQRModal(false)}>
+                <X size={24} color={Constants.black} />
+              </TouchableOpacity>
+            </View>
+
+            {selectedProduct && (
+              <>
+                <View style={styles.qrCodeContainer}>
+                  <QRCode
+                    value={generateQRData(selectedProduct)}
+                    size={200}
+                    color={Constants.black}
+                    backgroundColor={Constants.white}
+                  />
+                </View>
+
+                <Text style={styles.productNameInModal}>{selectedProduct.name}</Text>
+
+                <View style={styles.qrModalActions}>
+                  <TouchableOpacity
+                    style={styles.qrActionButton}
+                    onPress={handleCopyLink}>
+                    <Copy size={20} color={Constants.black} />
+                    <Text style={styles.qrActionText}>Copy Link</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={styles.qrActionButton}
+                    onPress={handleShareLink}>
+                    <Share2 size={20} color={Constants.black} />
+                    <Text style={styles.qrActionText}>Share</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -315,5 +379,64 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: Constants.customgrey2,
     marginVertical: 10,
+  },
+  qrModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  qrModalContent: {
+    backgroundColor: Constants.white,
+    borderRadius: 20,
+    padding: 20,
+    width: '85%',
+    maxWidth: 400,
+    alignItems: 'center',
+  },
+  qrModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 20,
+  },
+  qrModalTitle: {
+    fontSize: 18,
+    fontFamily: FONTS.Bold,
+    color: Constants.black,
+  },
+  qrCodeContainer: {
+    padding: 20,
+    backgroundColor: Constants.white,
+    borderRadius: 10,
+    marginBottom: 20,
+  },
+  productNameInModal: {
+    fontSize: 16,
+    fontFamily: FONTS.SemiBold,
+    color: Constants.black,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  qrModalActions: {
+    flexDirection: 'row',
+    gap: 15,
+    width: '100%',
+  },
+  qrActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: Constants.custom_yellow,
+    paddingVertical: 12,
+    borderRadius: 10,
+  },
+  qrActionText: {
+    fontSize: 14,
+    fontFamily: FONTS.SemiBold,
+    color: Constants.black,
   },
 });

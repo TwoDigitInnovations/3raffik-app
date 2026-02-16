@@ -8,6 +8,7 @@ import campaignSlice from './campaign/campaignSlice';
 import productSlice from './product/productSlice';
 import walletSlice from './wallet/walletSlice';
 import policySlice from './policy/policySlice';
+import dashboardSlice from './dashboard/dashboardSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,6 +17,7 @@ export const store = configureStore({
     product: productSlice,
     wallet: walletSlice,
     policy: policySlice,
+    dashboard: dashboardSlice,
   },
 });
 

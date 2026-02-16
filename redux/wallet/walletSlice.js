@@ -1,18 +1,24 @@
 import {createSlice} from '@reduxjs/toolkit';
 import {
+  getAffiliateWallet,
+  getCompanyWallet,
   getAffiliateCommissions,
   getCompanyOrders,
   getAffiliateCommissionedProducts,
-  requestWithdrawal
+  requestWithdrawal,
+  getWithdrawalHistory
 } from './walletAction';
 
 const initialState = {
   isLoading: false,
   commissions: [],
   totalCommission: 0,
+  availableBalance: 0,
+  totalWithdrawn: 0,
   orders: [],
   totalRevenue: 0,
   commissionedProducts: [],
+  withdrawals: [],
   error: null,
 };
 
@@ -23,14 +29,48 @@ const walletSlice = createSlice({
     clearWalletData: (state) => {
       state.commissions = [];
       state.totalCommission = 0;
+      state.availableBalance = 0;
+      state.totalWithdrawn = 0;
       state.orders = [];
       state.totalRevenue = 0;
       state.commissionedProducts = [];
+      state.withdrawals = [];
       state.error = null;
     }
   },
   extraReducers: builder => {
-    // Get Affiliate Commissions
+    builder.addCase(getAffiliateWallet.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(getAffiliateWallet.fulfilled, (state, action) => {
+      state.commissions = action.payload?.commissions || [];
+      state.totalCommission = action.payload?.totalCommission || 0;
+      state.availableBalance = action.payload?.availableBalance || 0;
+      state.totalWithdrawn = action.payload?.totalWithdrawn || 0;
+      state.isLoading = false;
+      state.error = null;
+    });
+    builder.addCase(getAffiliateWallet.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
+
+    builder.addCase(getCompanyWallet.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(getCompanyWallet.fulfilled, (state, action) => {
+      state.orders = action.payload?.orders || [];
+      state.totalRevenue = action.payload?.totalRevenue || 0;
+      state.availableBalance = action.payload?.availableBalance || 0;
+      state.totalWithdrawn = action.payload?.totalWithdrawn || 0;
+      state.isLoading = false;
+      state.error = null;
+    });
+    builder.addCase(getCompanyWallet.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
+
     builder.addCase(getAffiliateCommissions.pending, (state) => {
       state.isLoading = true;
     });
@@ -45,7 +85,6 @@ const walletSlice = createSlice({
       state.error = action.payload;
     });
 
-    // Get Company Orders
     builder.addCase(getCompanyOrders.pending, (state) => {
       state.isLoading = true;
     });
@@ -60,7 +99,6 @@ const walletSlice = createSlice({
       state.error = action.payload;
     });
 
-    // Get Affiliate Commissioned Products
     builder.addCase(getAffiliateCommissionedProducts.pending, (state) => {
       state.isLoading = true;
     });
@@ -74,7 +112,6 @@ const walletSlice = createSlice({
       state.error = action.payload;
     });
 
-    // Request Withdrawal
     builder.addCase(requestWithdrawal.pending, (state) => {
       state.isLoading = true;
     });
@@ -83,6 +120,19 @@ const walletSlice = createSlice({
       state.error = null;
     });
     builder.addCase(requestWithdrawal.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
+
+    builder.addCase(getWithdrawalHistory.pending, (state) => {
+      state.isLoading = true;
+    });
+    builder.addCase(getWithdrawalHistory.fulfilled, (state, action) => {
+      state.withdrawals = action.payload || [];
+      state.isLoading = false;
+      state.error = null;
+    });
+    builder.addCase(getWithdrawalHistory.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload;
     });
